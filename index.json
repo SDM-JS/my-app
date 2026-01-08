@@ -1,0 +1,584 @@
+[
+    {
+        "id": "3AskDikyCe1AAZot1FNFZ",
+        "name": "Alpha Group",
+        "from": "2024-01-01T10:18:35.214Z",
+        "to": "2024-01-01T12:18:35.214Z",
+        "daysOfWeek": [
+            "Saturday",
+            "Friday"
+        ],
+        "courseId": "-V1nWzMHXPjxZPL4yRBtI",
+        "teacherId": "R9ko_aEkD6ImRX53DC7Nj",
+        "cource": {
+            "id": "-V1nWzMHXPjxZPL4yRBtI",
+            "name": "Art & Design Master Class",
+            "price": "265.75"
+        },
+        "teacher": {
+            "id": "R9ko_aEkD6ImRX53DC7Nj",
+            "name": "Max Hoppe",
+            "email": "Maybell_Mayer66@yahoo.com"
+        },
+        "students": [
+            {
+                "id": "ih42_TIsQULSfnAD0gpIg",
+                "name": "Lucy Terry",
+                "phone": "1-563-789-2710 x19718"
+            },
+            {
+                "id": "9xTaTTO_hqC5Szd_xC_Qw",
+                "name": "Cecilia Mohr DVM",
+                "phone": "514-562-4064 x60314"
+            },
+            {
+                "id": "iFnEfAfRNaHxFyadXBInw",
+                "name": "Shaun Schinner II",
+                "phone": "605.577.2448 x70148"
+            },
+            {
+                "id": "7oVkAkBvSk5nbnzaE1yyU",
+                "name": "Dr. Willis Deckow",
+                "phone": "311-779-8495"
+            },
+            {
+                "id": "G3heZVfkM6Q58ZgTNJOY9",
+                "name": "Andre Johnston",
+                "phone": "1-621-747-9655 x181"
+            },
+            {
+                "id": "Nft8D1b3CQ-0ditoUvJeP",
+                "name": "Ms. Lucia Schneider DVM",
+                "phone": "472-434-4701"
+            },
+            {
+                "id": "3Fl9F_q5Lr_ayk9-8Welw",
+                "name": "Lonnie Stroman",
+                "phone": "(785) 932-4806"
+            }
+        ]
+    },
+    {
+        "id": "-9716ZdAbCgqP6RKi3wVV",
+        "name": "Delta Group",
+        "from": "2024-01-01T09:09:57.580Z",
+        "to": "2024-01-01T11:09:57.580Z",
+        "daysOfWeek": [
+            "Wednesday",
+            "Tuesday",
+            "Monday"
+        ],
+        "courseId": null,
+        "teacherId": "GaWpK2Dcw9KtnQ79RZQww",
+        "cource": null,
+        "teacher": {
+            "id": "GaWpK2Dcw9KtnQ79RZQww",
+            "name": "Sonia Stokes",
+            "email": "Anibal9@hotmail.com"
+        },
+        "students": [
+            {
+                "id": "1Cpu_vlp3aCcfHG_UTi3-",
+                "name": "Guadalupe Rempel",
+                "phone": "(355) 818-5265 x7292"
+            },
+            {
+                "id": "iZSWtCsksstN9xRI3db2y",
+                "name": "Robin Schaden",
+                "phone": "(704) 338-0500 x57857"
+            },
+            {
+                "id": "9DZXvfDiwFLJyfd6bRFSc",
+                "name": "Jessica Paucek",
+                "phone": "1-857-886-8861 x43244"
+            },
+            {
+                "id": "_mQ8TFd9cDirL4ZUJEgQH",
+                "name": "Cassandra Armstrong-Mohr",
+                "phone": "(951) 362-7755 x30907"
+            },
+            {
+                "id": "dhFUWPwTO8yh32t7enqvT",
+                "name": "Terri Bednar",
+                "phone": "368-882-5300 x31717"
+            },
+            {
+                "id": "ZESROyXakKtrkDpcpd6UV",
+                "name": "Garrett Wyman",
+                "phone": "321.977.5197 x564"
+            },
+            {
+                "id": "Am6bVk4fRLfOhZowZOyGZ",
+                "name": "Lawrence Price",
+                "phone": "348.869.5910"
+            },
+            {
+                "id": "Di2Z4PmsXZm2U44rjAtFl",
+                "name": "Rosemarie Jast",
+                "phone": "725-345-7959 x629"
+            },
+            {
+                "id": "a9bMQn2RNixCFxWc31pLP",
+                "name": "Ida Volkman",
+                "phone": "256-805-3780"
+            }
+        ]
+    },
+    {
+        "id": "iMO7AW0FC9jBuuHmN1o0C",
+        "name": "Delta Group",
+        "from": "2024-01-01T11:40:30.239Z",
+        "to": "2024-01-01T13:40:30.239Z",
+        "daysOfWeek": [
+            "Wednesday",
+            "Thursday",
+            "Monday",
+            "Friday"
+        ],
+        "courseId": "LF2shKM6VF4h4dqQ06zj6",
+        "teacherId": "user_36qATDAlGpHlnUiZQdCtJBZDzPl",
+        "cource": {
+            "id": "LF2shKM6VF4h4dqQ06zj6",
+            "name": "History Crash Course",
+            "price": "265.25"
+        },
+        "teacher": {
+            "id": "user_36qATDAlGpHlnUiZQdCtJBZDzPl",
+            "name": "Tara McLaughlin",
+            "email": "Edna.Carroll4@yahoo.com"
+        },
+        "students": [
+            {
+                "id": "B5oOcPWCu5dpqR0J00PPe",
+                "name": "Lola Beier",
+                "phone": "493.229.3827 x81091"
+            },
+            {
+                "id": "Fy4DFX451lrRlAHIixNA6",
+                "name": "Mabel West",
+                "phone": "475.998.1187 x4969"
+            },
+            {
+                "id": "Xa892CbJVTM9XxQP4Hitr",
+                "name": "Jeffery Bruen-Bashirian I",
+                "phone": "(894) 866-6507 x9106"
+            },
+            {
+                "id": "BMaiJwnLC-4MFHlWbilqT",
+                "name": "Bonnie Schroeder DDS",
+                "phone": "(533) 969-6466 x7564"
+            },
+            {
+                "id": "pSAGVqy3Brpy4hw0UlvsL",
+                "name": "Olivia Armstrong",
+                "phone": "(310) 912-8552 x02464"
+            },
+            {
+                "id": "GFOjCWAZimodO8Qj5No3k",
+                "name": "Orville Lynch",
+                "phone": "(648) 444-4557 x0015"
+            }
+        ]
+    },
+    {
+        "id": "PICJBt9zy84TQpbYchkBl",
+        "name": "Gamma Group",
+        "from": "2024-01-01T11:37:32.680Z",
+        "to": "2024-01-01T13:37:32.680Z",
+        "daysOfWeek": [
+            "Wednesday",
+            "Tuesday",
+            "Friday"
+        ],
+        "courseId": null,
+        "teacherId": "sXmf967cco29ZiXjqUe8X",
+        "cource": null,
+        "teacher": {
+            "id": "sXmf967cco29ZiXjqUe8X",
+            "name": "Megan Weimann",
+            "email": "Jaydon.Rogahn20@yahoo.com"
+        },
+        "students": [
+            {
+                "id": "fzsoX45kLpoon21KirKX-",
+                "name": "Lana Bauch",
+                "phone": "843.394.3820 x84304"
+            },
+            {
+                "id": "5aC4FBLUx1doybXzUfga9",
+                "name": "Jessica Keeling",
+                "phone": "(211) 308-7623 x949"
+            },
+            {
+                "id": "B_ZBzJI7yBukbOo0NQ1LZ",
+                "name": "Bethany Kiehn",
+                "phone": "437.259.9835 x6710"
+            },
+            {
+                "id": "MIFu652kqh8Lcfu-6KFNz",
+                "name": "Debbie Ortiz",
+                "phone": "411.659.6137 x34500"
+            },
+            {
+                "id": "grqGRbR3Vn8jmiYpZ_8eP",
+                "name": "Jonathan Kunze",
+                "phone": "268.791.8624 x4914"
+            },
+            {
+                "id": "5SdhgxvbNI668Tujm_GtT",
+                "name": "Mr. Warren Kovacek",
+                "phone": "438-783-1854 x3526"
+            },
+            {
+                "id": "1_-EnscRLLDrFbeK5tQpi",
+                "name": "Maxine Beer",
+                "phone": "210.336.6971 x49738"
+            }
+        ]
+    },
+    {
+        "id": "NhtPbD48uXxQP0RfjI9q0",
+        "name": "Lambda Group",
+        "from": "2024-01-01T10:39:54.889Z",
+        "to": "2024-01-01T12:39:54.889Z",
+        "daysOfWeek": [
+            "Monday",
+            "Wednesday"
+        ],
+        "courseId": null,
+        "teacherId": "mxSSo6xduCx1YiF3Q5rMf",
+        "cource": null,
+        "teacher": {
+            "id": "mxSSo6xduCx1YiF3Q5rMf",
+            "name": "Dr. Norma Kohler",
+            "email": "Beryl_Lehner@gmail.com"
+        },
+        "students": [
+            {
+                "id": "-_6UXDBNEr3CavXOMvqbc",
+                "name": "Wilbert Bergnaum",
+                "phone": "(966) 901-1285 x83310"
+            },
+            {
+                "id": "IV2YwO9uEajRcfOXWeyab",
+                "name": "Mr. Alberto Wisozk",
+                "phone": "459-222-6374 x35846"
+            },
+            {
+                "id": "x7P47V5btj_5ctp_xYp2D",
+                "name": "Lorenzo Armstrong",
+                "phone": "1-563-751-7539"
+            },
+            {
+                "id": "Hm3kMTJLdOg-IJ3xvAgVO",
+                "name": "Miss Michele Grimes",
+                "phone": "630.701.5299 x94879"
+            },
+            {
+                "id": "Pwn-ttf9hf19AwwOwI0kw",
+                "name": "Roderick Abbott-Lowe",
+                "phone": "668-812-4191 x5734"
+            },
+            {
+                "id": "OcYy4e-gZfTTFYwMHyXWw",
+                "name": "Darren Stehr",
+                "phone": "1-698-862-9609 x7773"
+            },
+            {
+                "id": "MU7j_1LWGYWo-A0-DWQy3",
+                "name": "Viola Auer",
+                "phone": "313-258-4356 x12250"
+            },
+            {
+                "id": "UIAh3PBU9F3A6UPmacuPg",
+                "name": "Margarita Johnston",
+                "phone": "864-768-6051 x350"
+            }
+        ]
+    },
+    {
+        "id": "NdADaB80Tjas7M8OgNHkA",
+        "name": "Theta Group",
+        "from": "2024-01-01T09:35:58.535Z",
+        "to": "2024-01-01T11:35:58.535Z",
+        "daysOfWeek": [
+            "Thursday",
+            "Monday",
+            "Wednesday",
+            "Tuesday",
+            "Friday"
+        ],
+        "courseId": null,
+        "teacherId": "GaWpK2Dcw9KtnQ79RZQww",
+        "cource": null,
+        "teacher": {
+            "id": "GaWpK2Dcw9KtnQ79RZQww",
+            "name": "Sonia Stokes",
+            "email": "Anibal9@hotmail.com"
+        },
+        "students": [
+            {
+                "id": "tYYzDMDe-m3NA0nGjW_rP",
+                "name": "Phillip Schulist IV",
+                "phone": "756-420-6864 x343"
+            },
+            {
+                "id": "vy8VB2bto1eKQDNbmzgy5",
+                "name": "Dominick Reilly",
+                "phone": "581-993-6994 x83972"
+            },
+            {
+                "id": "pJ6EkqhPzhGW7ZYADMfOW",
+                "name": "Beatrice Bradtke MD",
+                "phone": "1-959-686-7716 x41126"
+            },
+            {
+                "id": "kvnQTyDpMBh6BqBFlafl-",
+                "name": "Yvonne Hansen",
+                "phone": "536-985-3112"
+            },
+            {
+                "id": "KViwT6j11IJ44uKwAtHDs",
+                "name": "Aaron Larson",
+                "phone": "(855) 432-3978 x823"
+            },
+            {
+                "id": "RFFjAjESMzMvYpRZwyzdd",
+                "name": "Travis Gorczany",
+                "phone": "563.849.2980 x25774"
+            },
+            {
+                "id": "QTFewv_z22z-cZgNbbhet",
+                "name": "Tasha Will",
+                "phone": "769-622-7671"
+            }
+        ]
+    },
+    {
+        "id": "HKOJggMbQbVfwGOUatg7d",
+        "name": "Theta Group",
+        "from": "2024-01-01T09:22:40.777Z",
+        "to": "2024-01-01T11:22:40.777Z",
+        "daysOfWeek": [
+            "Thursday",
+            "Wednesday",
+            "Friday"
+        ],
+        "courseId": null,
+        "teacherId": "8c8CRVlHVHGR0QUU54OHx",
+        "cource": null,
+        "teacher": {
+            "id": "8c8CRVlHVHGR0QUU54OHx",
+            "name": "Ben Goldner",
+            "email": "Chris17@yahoo.com"
+        },
+        "students": [
+            {
+                "id": "grnYZoAuL9flWnU4bj_DQ",
+                "name": "Madeline Feeney",
+                "phone": "1-870-659-6100 x282"
+            },
+            {
+                "id": "oZKBx_ZHSNMfdG_Sm78CE",
+                "name": "Peter Kuhlman",
+                "phone": "215-552-8404 x3296"
+            },
+            {
+                "id": "PhLEUoeMMP8UaEgY05Jii",
+                "name": "Geoffrey Lesch",
+                "phone": "1-486-603-7073 x4018"
+            },
+            {
+                "id": "N6iS0a7gW5ox1zyYIVyjx",
+                "name": "Mr. Orlando Bruen",
+                "phone": "(355) 236-4959 x5623"
+            }
+        ]
+    },
+    {
+        "id": "Vre9EfeuF6tBWyuG0d0AG",
+        "name": "Theta Group",
+        "from": "2024-01-01T10:07:58.891Z",
+        "to": "2024-01-01T12:07:58.891Z",
+        "daysOfWeek": [
+            "Monday",
+            "Wednesday",
+            "Thursday"
+        ],
+        "courseId": null,
+        "teacherId": "lAF0Wcy3Q5ENnuSzPmrQD",
+        "cource": null,
+        "teacher": {
+            "id": "lAF0Wcy3Q5ENnuSzPmrQD",
+            "name": "Kelli Baumbach",
+            "email": "Stevie11@hotmail.com"
+        },
+        "students": [
+            {
+                "id": "iCNfQ3EL3Nwrb2USAsrTz",
+                "name": "Velma Schuppe",
+                "phone": "841-951-0429 x00457"
+            },
+            {
+                "id": "uRBBP6BeYF0PfDscCCShd",
+                "name": "Janis Bashirian",
+                "phone": "361-302-2529 x89188"
+            },
+            {
+                "id": "b6HmLcirjxTzehldtjyCC",
+                "name": "Jan Zemlak",
+                "phone": "(412) 781-4564"
+            },
+            {
+                "id": "iTW1eUFGrTltw4ij4oooz",
+                "name": "Jeffrey Schoen",
+                "phone": "(753) 461-7894 x60738"
+            },
+            {
+                "id": "tn9TTdXxBnJmhb0faBZkX",
+                "name": "Cheryl Kilback",
+                "phone": "786.388.2575 x007"
+            },
+            {
+                "id": "qjYAd5cNjpXKhyFxtsCu-",
+                "name": "Francis Lubowitz-Stanton",
+                "phone": "1-207-954-2363 x995"
+            },
+            {
+                "id": "wmSrlFPjjRr6PHT4FsxjZ",
+                "name": "Mrs. Freda Zieme",
+                "phone": "(999) 210-1940"
+            }
+        ]
+    },
+    {
+        "id": "FgRX6rE0NTxCBydcbfBL4",
+        "name": "Zeta Group",
+        "from": "2024-01-01T10:33:57.866Z",
+        "to": "2024-01-01T12:33:57.866Z",
+        "daysOfWeek": [
+            "Wednesday",
+            "Saturday",
+            "Thursday",
+            "Monday",
+            "Friday"
+        ],
+        "courseId": null,
+        "teacherId": "8c8CRVlHVHGR0QUU54OHx",
+        "cource": null,
+        "teacher": {
+            "id": "8c8CRVlHVHGR0QUU54OHx",
+            "name": "Ben Goldner",
+            "email": "Chris17@yahoo.com"
+        },
+        "students": [
+            {
+                "id": "LPl4whqWAUPrCShii-PO-",
+                "name": "Raquel Purdy",
+                "phone": "(653) 691-2341 x1977"
+            },
+            {
+                "id": "Xf-x3lKovKcmWXubif4yg",
+                "name": "Jill Price PhD",
+                "phone": "(924) 999-3083 x1017"
+            },
+            {
+                "id": "932b19GGM5I6VEoq9XZGv",
+                "name": "Jamie Nitzsche",
+                "phone": "(216) 988-9544 x1332"
+            },
+            {
+                "id": "BTY-8SCZ85IYZ2AWosQym",
+                "name": "Alejandro Krajcik",
+                "phone": "628.431.6796 x362"
+            },
+            {
+                "id": "yPzPynIuFSsTwPc8-V03A",
+                "name": "Gloria Kirlin",
+                "phone": "878.228.9866"
+            }
+        ]
+    },
+    {
+        "id": "10lH9qXsWabcqarjQQU6R",
+        "name": "Zeta Group",
+        "from": "2024-01-01T10:24:51.448Z",
+        "to": "2024-01-01T12:24:51.448Z",
+        "daysOfWeek": [
+            "Tuesday",
+            "Monday",
+            "Thursday",
+            "Wednesday"
+        ],
+        "courseId": null,
+        "teacherId": "user_36qATDAlGpHlnUiZQdCtJBZDzPl",
+        "cource": null,
+        "teacher": {
+            "id": "user_36qATDAlGpHlnUiZQdCtJBZDzPl",
+            "name": "Tara McLaughlin",
+            "email": "Edna.Carroll4@yahoo.com"
+        },
+        "students": [
+            {
+                "id": "KwdRuURHt0KBrP1S8ve_R",
+                "name": "Ernesto Pouros",
+                "phone": "607-387-5623 x6261"
+            },
+            {
+                "id": "TpxS6ykLE3Jr_PNbKQIiM",
+                "name": "Mrs. Sheryl Cruickshank",
+                "phone": "1-417-766-3347 x9324"
+            },
+            {
+                "id": "svxzCPRtm0-cw_bQwiSMG",
+                "name": "Kyle Volkman",
+                "phone": "1-908-394-6584 x41687"
+            },
+            {
+                "id": "raNKmV0OcGkv9wIzjjAyK",
+                "name": "Roosevelt Kuvalis",
+                "phone": "329.737.6692 x69236"
+            },
+            {
+                "id": "G6rYApibo7nOd4S-xUJ1V",
+                "name": "Clark Zboncak",
+                "phone": "441-209-5300"
+            },
+            {
+                "id": "opvpO1MUUcQF9YxwHUa1U",
+                "name": "Eileen Zboncak",
+                "phone": "(540) 984-5342 x761"
+            },
+            {
+                "id": "ClXSu6eEMHbdy9SDdlTlk",
+                "name": "Al Hartmann",
+                "phone": "210-855-0532"
+            },
+            {
+                "id": "Hh7ySejjxehKbJ8SvmvSY",
+                "name": "Mr. Paul Johnson",
+                "phone": "447-473-9919 x3119"
+            },
+            {
+                "id": "bxigGi-TR2BbunroROYNZ",
+                "name": "Lana Legros",
+                "phone": "866.498.1079 x44052"
+            },
+            {
+                "id": "TgMCzxD8I_6IRbYQy0txI",
+                "name": "Wilma Mueller",
+                "phone": "525.766.5873"
+            },
+            {
+                "id": "vaPM-2ip0WWX6xtnDR8ms",
+                "name": "Cecilia Hermiston",
+                "phone": "483.855.4918 x71069"
+            },
+            {
+                "id": "HnjuXcIMp-IUdrXjoXbcR",
+                "name": "Terry McGlynn",
+                "phone": "1-318-336-4810"
+            }
+        ]
+    }
+]

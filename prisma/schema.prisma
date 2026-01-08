@@ -1,0 +1,190 @@
+generator client {
+    provider = "prisma-client-js"
+}
+
+datasource db {
+    provider = "postgresql"
+}
+
+model Student {
+    id       String   @id @default(nanoid())
+    name     String
+    birthday DateTime
+    phone    String
+
+    courses Course[]
+
+    cameFrom cameFrom? @relation(fields: [cameText], references: [id], onDelete: Cascade)
+    cameText String?
+
+    createdAt   DateTime      @default(now())
+    updatedAt   DateTime      @updatedAt
+    group       Groups?       @relation(fields: [groupId], references: [id], onDelete: Cascade)
+    groupId     String?
+    attendances Attendances[]
+    payments    Payments[]
+}
+
+model Teacher {
+    id       String   @id @default(nanoid())
+    name     String
+    birthday DateTime
+    phone    String
+    ratings  Float?   @default(0)
+    email    String
+
+    avatarUrl String
+
+    subjects Subject[]
+    courses  Course[]
+
+    createdAt   DateTime      @default(now())
+    updatedAt   DateTime      @updatedAt
+    group       Groups[]
+    attendances Attendances[]
+    lessons     Lessons[]
+}
+
+model Lessons {
+    id   String @id @default(nanoid())
+    desc String
+
+    daysOfWeek DaysOfWeek[]
+
+    group   Groups? @relation(fields: [groupId], references: [id], onDelete: Cascade)
+    groupId String?
+
+    teacher   Teacher? @relation(fields: [teacherId], references: [id], onDelete: Cascade)
+    teacherId String?
+
+    startTime DateTime
+    endTime   DateTime
+
+    room       String
+    attendance Attendances[]
+
+    status Status
+}
+
+model Groups {
+    id        String     @id @default(nanoid())
+    name      String
+    students  Student[]
+    teacher   Teacher?   @relation(fields: [teacherId], references: [id], onDelete: Cascade)
+    course    Course?    @relation(fields: [courseId], references: [id], onDelete: Cascade)
+    payments  Payments[]
+    courseId  String?
+    teacherId String?
+    lessons   Lessons[]
+}
+
+model Admin {
+    id        String   @id @default(nanoid())
+    name      String
+    birthday  DateTime
+    email     String
+    avatarUrl String
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+}
+
+model Subject {
+    id       String    @id @default(nanoid())
+    name     String
+    teachers Teacher[]
+
+    courses Course[]
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+}
+
+model Course {
+    id   String @id @default(nanoid())
+    name String
+    desc String
+
+    price String
+
+    subject   Subject? @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+    subjectId String?
+
+    teacher Teacher[]
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    students Student[]
+    groups   Groups[]
+}
+
+model Attendances {
+    id   String @id @default(nanoid())
+    desc String
+
+    student   Student? @relation(fields: [studentId], references: [id], onDelete: Cascade)
+    studentId String?
+
+    teacher   Teacher? @relation(fields: [teacherId], references: [id], onDelete: Cascade)
+    teacherId String?
+
+    date DateTime @default(now())
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+    lessons   Lessons? @relation(fields: [lessonsId], references: [id], onDelete: Cascade)
+    lessonsId String?
+}
+
+model Payments {
+    id String @id @default(nanoid())
+
+    date DateTime
+
+    group   Groups? @relation(fields: [groupId], references: [id], onDelete: Cascade)
+    groupId String?
+
+    desc   String
+    amount String
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    studentId String?
+    student   Student? @relation(fields: [studentId], references: [id], onDelete: Cascade)
+}
+
+enum Roles {
+    ADMIN
+    TEACHER
+}
+
+enum DaysOfWeek {
+    Monday
+    Tuesday
+    Wednesday
+    Thursday
+    Friday
+    Saturday
+}
+
+enum gender {
+    MALE
+    FEMALE
+}
+
+enum Status {
+    SCHEDULED
+    COMPLETED
+    CANCELED
+}
+
+model cameFrom {
+    id       String    @id @default(nanoid())
+    name     String    @unique
+    students Student[]
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+}
