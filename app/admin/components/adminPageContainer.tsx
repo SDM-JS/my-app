@@ -1,7 +1,18 @@
 'use client';
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Users, GraduationCap, CreditCard, CheckSquare, Calendar, TrendingUp, TrendingDown } from 'lucide-react';
+import { Users, GraduationCap, CreditCard, CheckSquare, Calendar, TrendingUp, TrendingDown, Clock, MapPin, User, BookOpen } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+
+type Lesson = {
+    id: string;
+    teacher: string;
+    room: string;
+    time: string;
+    group: string;
+    course: string;
+};
+
 type props = {
     totalStudents: number,
     totalTeachers: number;
@@ -9,7 +20,8 @@ type props = {
     attendanceRate: number;
     newStudentsMonth: number;
     pers: number,
-    persState: "asc" | "desc"
+    persState: "asc" | "desc",
+    upcomingLessons: Lesson[],
 }
 
 export default function AdminPageContainer({
@@ -19,9 +31,28 @@ export default function AdminPageContainer({
     attendanceRate,
     newStudentsMonth,
     pers,
-    persState
+    persState,
+    upcomingLessons
 }: props) {
-    const fixedPers = (100 - pers).toFixed(2)
+    const fixedPers = (100 - pers).toFixed(2);
+
+    // Get current time for status display
+    const currentTime = new Date();
+
+    const isLessonOngoing = (lessonTime: string) => {
+        const [startTimeStr, endTimeStr] = lessonTime.split(' - ');
+        const [startHour, startMinute] = startTimeStr.split(':').map(Number);
+        const [endHour, endMinute] = endTimeStr.split(':').map(Number);
+
+        const startTime = new Date();
+        startTime.setHours(startHour, startMinute, 0, 0);
+
+        const endTime = new Date();
+        endTime.setHours(endHour, endMinute, 0, 0);
+
+        return currentTime >= startTime && currentTime <= endTime;
+    };
+
     return (
         <div className="space-y-6">
             <div>
@@ -86,13 +117,72 @@ export default function AdminPageContainer({
                 <CardHeader>
                     <CardTitle className="flex items-center gap-2">
                         <Calendar className="h-5 w-5" />
-                        Upcoming Lessons Today
+                        Today's Lessons
                     </CardTitle>
                 </CardHeader>
                 <CardContent>
-                    <div className="space-y-4">
+                    {upcomingLessons.length === 0 ? (
+                        <div className="text-center py-8">
+                            <Calendar className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
+                            <p className="text-muted-foreground">No lessons scheduled for today</p>
+                        </div>
+                    ) : (
+                        <div className="space-y-4">
+                            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                                {upcomingLessons.map((lesson) => (
+                                    <div
+                                        key={lesson.id}
+                                        className={`border rounded-lg p-4 transition-smooth hover:shadow-md ${isLessonOngoing(lesson.time)
+                                            ? 'border-primary bg-primary/5'
+                                            : 'border-border'
+                                            }`}
+                                    >
+                                        <div className="flex items-start justify-between mb-3">
+                                            <div>
+                                                <h3 className="font-semibold text-lg">{lesson.group}</h3>
+                                                <p className="text-sm text-muted-foreground">{lesson.course}</p>
+                                            </div>
+                                            <Badge
+                                                variant={isLessonOngoing(lesson.time) ? "default" : "outline"}
+                                                className={isLessonOngoing(lesson.time) ? "bg-green-500 hover:bg-green-600" : ""}
+                                            >
+                                                {isLessonOngoing(lesson.time) ? (
+                                                    <span className="flex items-center gap-1">
+                                                        <div className="h-2 w-2 rounded-full bg-white animate-pulse" />
+                                                        Ongoing
+                                                    </span>
+                                                ) : (
+                                                    "Upcoming"
+                                                )}
+                                            </Badge>
+                                        </div>
 
-                    </div>
+                                        <div className="space-y-3">
+                                            <div className="flex items-center gap-2 text-sm">
+                                                <User className="h-4 w-4 text-muted-foreground" />
+                                                <span className="font-medium">{lesson.teacher}</span>
+                                            </div>
+
+                                            <div className="flex items-center gap-2 text-sm">
+                                                <Clock className="h-4 w-4 text-muted-foreground" />
+                                                <span className="font-medium">{lesson.time}</span>
+                                            </div>
+
+                                            <div className="flex items-center gap-2 text-sm">
+                                                <MapPin className="h-4 w-4 text-muted-foreground" />
+                                                <span>{lesson.room}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+
+                            {/* Summary */}
+                            <div className="text-center text-sm text-muted-foreground pt-2">
+                                {upcomingLessons.length} lessons scheduled for today
+                            </div>
+                        </div>
+                    )}
                 </CardContent>
             </Card>
         </div>

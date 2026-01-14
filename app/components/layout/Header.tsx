@@ -1,39 +1,23 @@
 'use client';
 
-import { Bell, Search, Moon, Sun, User, LogOut } from 'lucide-react';
+import { Bell, Search, Moon, Sun } from 'lucide-react';
 import { useTheme } from 'next-themes';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { dark } from "@clerk/themes"
-import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuItem,
-    DropdownMenuLabel,
-    DropdownMenuSeparator,
-    DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import Link from 'next/link';
-import { useState, useEffect } from 'react';
-import { Teacher } from '@prisma/client';
 import { UserButton } from '@clerk/nextjs';
-
-type teacherType = {
-    avatarUrl: string,
-    name: string,
-    email: string,
-}
+import { useState, useEffect } from 'react';
 
 export default function Header() {
-
     const { theme, setTheme } = useTheme();
     const [mounted, setMounted] = useState(false);
 
-    // Wait until after client-side hydration to show theme-dependent content
     useEffect(() => {
         setMounted(true);
     }, []);
+
+    // Use a default theme until mounted to avoid hydration mismatch
+    const currentTheme = mounted ? theme : 'light';
 
     return (
         <header className="fixed left-64 right-0 top-0 z-30 flex h-16 items-center gap-4 border-b bg-background px-6 shadow-sm max-lg:left-0">
@@ -55,7 +39,7 @@ export default function Header() {
                 <Button
                     variant="ghost"
                     size="icon"
-                    onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+                    onClick={() => setTheme(currentTheme === 'dark' ? 'light' : 'dark')}
                     disabled={!mounted}
                 >
                     {mounted ? (
@@ -78,14 +62,19 @@ export default function Header() {
                     </span>
                 </Button>
 
-                {/* User Menu - Only render after mount to avoid hydration mismatch */}
-                <UserButton appearance={{
-                    theme: theme === 'dark' ? dark : 'clerk',
-                }} userProfileProps={{
-                    appearance: {
-                        theme: theme === 'dark' ? dark : 'clerk'
-                    }
-                }} />
+                {/* User Menu - Conditionally render after mount */}
+                {mounted && (
+                    <UserButton
+                        appearance={{
+                            theme: currentTheme === 'dark' ? dark : 'clerk',
+                        }}
+                        userProfileProps={{
+                            appearance: {
+                                theme: currentTheme === 'dark' ? dark : 'clerk'
+                            }
+                        }}
+                    />
+                )}
             </div>
         </header>
     );

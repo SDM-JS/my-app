@@ -1,48 +1,73 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { DaysOfWeek } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
 
-// GET /api/lessons - Get all lessons with optional date filtering
+// GET all lessons or filtered by date range
 export async function GET(request: NextRequest) {
     try {
-        const searchParams = request.nextUrl.searchParams;
+        const { searchParams } = new URL(request.url);
         const startDate = searchParams.get('startDate');
         const endDate = searchParams.get('endDate');
 
-        const where: any = {};
+        let whereClause: any = {};
 
         if (startDate && endDate) {
-            where.startTime = {
-                gte: new Date(startDate),
-                lte: new Date(endDate),
+            whereClause = {
+                OR: [
+                    {
+                        startTime: {
+                            gte: new Date(startDate),
+                            lte: new Date(endDate)
+                        }
+                    }
+                ]
             };
         }
 
         const lessons = await prisma.lessons.findMany({
-            where,
+            where: whereClause,
             include: {
                 group: {
                     include: {
+                        teacher: {
+                            select: {
+                                id: true,
+                                name: true,
+                                email: true,
+                                avatarUrl: true,
+                                phone: true
+                            }
+                        },
                         course: {
                             select: {
                                 id: true,
                                 name: true,
+                                desc: true,
+                                price: true
                             }
                         },
-                        teacher: true,
-                        students: true,
+                        students: {
+                            select: {
+                                id: true,
+                                name: true,
+                                phone: true
+                            }
+                        }
                     }
                 },
-                teacher: true,
-                attendance: {
-                    include: {
-                        student: true,
-                        teacher: true,
+                teacher: {
+                    select: {
+                        id: true,
+                        name: true,
+                        email: true,
+                        avatarUrl: true,
+                        phone: true
                     }
-                },
+                }
             },
             orderBy: {
-                startTime: 'asc',
-            },
+                startTime: 'asc'
+            }
         });
 
         return NextResponse.json(lessons);
@@ -52,57 +77,64 @@ export async function GET(request: NextRequest) {
             { error: 'Failed to fetch lessons' },
             { status: 500 }
         );
+    } finally {
+        await prisma.$disconnect();
     }
 }
 
-// POST /api/lessons - Create a new lesson
+// POST create new lesson
 export async function POST(request: NextRequest) {
     try {
         const body = await request.json();
-        const { groupId, teacherId, startTime, endTime, room, status, desc, daysOfWeek } = body;
+
+        const {
+            groupId,
+            teacherId,
+            startTime,
+            endTime,
+            room,
+            desc,
+            daysOfWeek
+        } = body;
 
         // Validate required fields
-        if (!teacherId || !startTime || !endTime || !room) {
+        if (!groupId || !teacherId || !startTime || !endTime || !room || !daysOfWeek) {
             return NextResponse.json(
                 { error: 'Missing required fields' },
                 { status: 400 }
             );
         }
 
-        // Validate time
-        const start = new Date(startTime);
-        const end = new Date(endTime);
-
-        if (start >= end) {
+        // Validate daysOfWeek array
+        const validDays = Object.values(DaysOfWeek);
+        if (!Array.isArray(daysOfWeek) ||
+            !daysOfWeek.every(day => validDays.includes(day))) {
             return NextResponse.json(
-                { error: 'End time must be after start time' },
+                { error: 'Invalid daysOfWeek format' },
                 { status: 400 }
             );
         }
 
-        // Create lesson
         const lesson = await prisma.lessons.create({
             data: {
-                // groupId: groupId ? groupId : "",
+                groupId,
                 teacherId,
-                startTime: start,
-                endTime: end,
+                startTime: new Date(startTime),
+                endTime: new Date(endTime),
                 room,
-                status: status || 'SCHEDULED',
                 desc: desc || '',
-                daysOfWeek: daysOfWeek || [],
+                daysOfWeek: daysOfWeek as DaysOfWeek[],
             },
             include: {
                 group: {
                     include: {
-                        course: true,
                         teacher: true,
-                        students: true,
+                        course: true,
+                        students: true
                     }
                 },
-                teacher: true,
-                attendance: true,
-            },
+                teacher: true
+            }
         });
 
         return NextResponse.json(lesson, { status: 201 });
@@ -112,5 +144,7 @@ export async function POST(request: NextRequest) {
             { error: 'Failed to create lesson' },
             { status: 500 }
         );
+    } finally {
+        await prisma.$disconnect();
     }
 }

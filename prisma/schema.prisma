@@ -63,7 +63,8 @@ model Lessons {
     room       String
     attendance Attendances[]
 
-    status Status
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
 }
 
 model Groups {
@@ -76,6 +77,9 @@ model Groups {
     courseId  String?
     teacherId String?
     lessons   Lessons[]
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
 }
 
 model Admin {
@@ -172,12 +176,6 @@ enum DaysOfWeek {
 enum gender {
     MALE
     FEMALE
-}
-
-enum Status {
-    SCHEDULED
-    COMPLETED
-    CANCELED
 }
 
 model cameFrom {

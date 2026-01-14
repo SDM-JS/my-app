@@ -3,7 +3,7 @@
 import { useMemo, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import DataTable from '@/app/components/DataTable';
-import { Plus, Eye, Pencil, Trash2, Calendar, Clock, Users, MapPin, X, Search, ChevronLeft, ChevronRight, User } from 'lucide-react';
+import { Plus, Eye, Pencil, Trash2, Calendar, Clock, Users, MapPin, X, Search, ChevronLeft, ChevronRight, User, Check, XCircle } from 'lucide-react';
 import {
     Dialog,
     DialogContent,
@@ -21,15 +21,15 @@ import { toast } from 'sonner';
 import { Textarea } from '@/components/ui/textarea';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { axiosClient } from '@/lib/axiosClient';
-import { Lessons, Groups, Teacher } from '@prisma/client';
+import { Lessons, Groups, Teacher, DaysOfWeek } from '@prisma/client';
 import { Loader2 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { format, parseISO, startOfWeek, endOfWeek, eachDayOfInterval, isSameDay } from 'date-fns';
+import { format, parseISO, startOfWeek, endOfWeek, eachDayOfInterval, isSameDay, addDays } from 'date-fns';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Checkbox } from '@/components/ui/checkbox';
 
 const lessonSchema = z.object({
     groupId: z.string().min(1, 'Group is required'),
@@ -37,56 +37,51 @@ const lessonSchema = z.object({
     startTime: z.string().min(1, 'Start time is required'),
     endTime: z.string().min(1, 'End time is required'),
     room: z.string().min(1, 'Room is required'),
-    status: z.enum(['SCHEDULED', 'COMPLETED', 'CANCELED']),
     desc: z.string().optional(),
+    daysOfWeek: z.array(z.nativeEnum(DaysOfWeek)).min(1, 'At least one day must be selected'),
 });
 
 type LessonFormData = z.infer<typeof lessonSchema>;
 
 type LessonsWithRelations = Lessons & {
     group: (Groups & {
-        cource: { id: string; name: string; } | null;
-        teacher: (Teacher & { user: { id: string; name: string; email: string; } }) | null;
-        students: any[];
+        course: { id: string; name: string; desc: string; price: string } | null;
+        teacher: Teacher | null;
+        students: {
+            id: string;
+            name: string;
+            phone: string;
+            birthday: Date;
+        }[];
     }) | null;
-    teacher: (Teacher & { user: { id: string; name: string; email: string; phone: string; } }) | null;
-    attendance: any[];
+    teacher: Teacher | null;
 };
 
-type AttendanceRecord = {
-    id: string;
-    studentId: string;
-    lessonsId: string;
-    desc: string | null;
-    teacherId: string;
-    date: Date;
-    student: {
-        id: string;
-        name: string;
-        phone: string;
-        birthday: Date;
-    };
-    teacher: {
-        id: string;
-        name: string;
-        email: string;
-        phone: string;
-    };
-};
 
 export default function LessonsPage() {
     const queryClient = useQueryClient();
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-    const [isAttendanceDialogOpen, setIsAttendanceDialogOpen] = useState(false);
     const [selectedLesson, setSelectedLesson] = useState<LessonsWithRelations | null>(null);
     const [viewMode, setViewMode] = useState<'view' | 'edit' | 'create'>('create');
     const [selectedDate, setSelectedDate] = useState<Date>(new Date());
     const [viewModeType, setViewModeType] = useState<'table' | 'calendar'>('table');
-    const [attendanceRecords, setAttendanceRecords] = useState<AttendanceRecord[]>([]);
-    const [attendanceSearch, setAttendanceSearch] = useState('');
-    const [teacherSearch, setTeacherSearch] = useState('');
-    const [selectedTeacher, setSelectedTeacher] = useState<Teacher | null>(null);
+    const [selectedDays, setSelectedDays] = useState<DaysOfWeek[]>([]);
+
+    // Handle Sunday click - automatically get Monday
+    const handleDateChange = (date: Date) => {
+        const dayOfWeek = date.getDay();
+        if (dayOfWeek === 0) { // Sunday
+            // Show message and automatically select Monday
+            toast.info('Sunday selected', {
+                description: 'Automatically showing Monday schedule'
+            });
+            const monday = addDays(date, 1);
+            setSelectedDate(monday);
+        } else {
+            setSelectedDate(date);
+        }
+    };
 
     const { data: groups, isLoading: isLoadingGroups } = useQuery({
         queryKey: ["groups"],
@@ -104,21 +99,26 @@ export default function LessonsPage() {
         },
     });
 
-    const { data: lessons, isLoading, refetch } = useQuery({
+    const { data: lessonsData, isLoading, refetch } = useQuery({
         queryKey: ["lessons", selectedDate.toISOString().split('T')[0]],
         queryFn: async () => {
-            const startDate = startOfWeek(selectedDate, { weekStartsOn: 1 });
-            const endDate = endOfWeek(selectedDate, { weekStartsOn: 1 });
+            // Handle Sunday - show Monday instead
+            const queryDate = new Date(selectedDate);
+            const dayOfWeek = queryDate.getDay();
+            if (dayOfWeek === 0) {
+                queryDate.setDate(queryDate.getDate() + 1);
+            }
 
-            const { data } = await axiosClient.get<LessonsWithRelations[]>("/api/lessons", {
+            const { data } = await axiosClient.get("/api/lessons/date", {
                 params: {
-                    startDate: startDate.toISOString(),
-                    endDate: endDate.toISOString(),
+                    date: queryDate.toISOString().split('T')[0]
                 }
             })
             return data
         },
     });
+
+    console.log(lessonsData)
 
     const {
         register,
@@ -130,12 +130,13 @@ export default function LessonsPage() {
     } = useForm<LessonFormData>({
         resolver: zodResolver(lessonSchema),
         defaultValues: {
-            status: 'SCHEDULED',
+            daysOfWeek: [],
         },
     });
 
     const startTimeValue = watch('startTime');
     const endTimeValue = watch('endTime');
+    const daysOfWeekValue = watch('daysOfWeek') || [];
 
     const createLessonMutation = useMutation({
         mutationFn: async (data: LessonFormData) => {
@@ -147,14 +148,14 @@ export default function LessonsPage() {
             return response.data;
         },
         onSuccess: () => {
-            toast.success('Lesson Scheduled', {
-                description: 'Lesson has been scheduled successfully.',
+            toast.success('Lesson Created', {
+                description: 'Lesson has been created successfully.',
             });
             queryClient.invalidateQueries({ queryKey: ['lessons'] });
             closeDialog();
         },
         onError: (error: any) => {
-            toast.error('Failed to schedule lesson', {
+            toast.error('Failed to create lesson', {
                 description: error.response?.data?.error || 'Please try again.',
             });
         },
@@ -201,86 +202,28 @@ export default function LessonsPage() {
         },
     });
 
-    const fetchAttendanceMutation = useMutation({
-        mutationFn: async (lessonId: string) => {
-            const { data } = await axiosClient.get(`/api/lessons/${lessonId}/attendance`);
-            return data;
-        },
-        onSuccess: (data) => {
-            setAttendanceRecords(data);
-            setIsAttendanceDialogOpen(true);
-        },
-        onError: (error) => {
-            toast.error('Failed to fetch attendance', {
-                description: 'Please try again.',
-            });
-        },
-    });
-
-    const createAttendanceMutation = useMutation({
-        mutationFn: async ({ lessonId, studentId, teacherId }: { lessonId: string; studentId: string; teacherId: string }) => {
-            const response = await axiosClient.post(`/api/lessons/${lessonId}/attendance`, {
-                studentId,
-                teacherId,
-                status: 'present',
-                desc: 'Marked present',
-            });
-            return response.data;
-        },
-        onSuccess: () => {
-            toast.success('Attendance Recorded', {
-                description: 'Attendance has been recorded successfully.',
-            });
-            if (selectedLesson) {
-                fetchAttendanceMutation.mutate(selectedLesson.id);
-            }
-        },
-        onError: (error) => {
-            toast.error('Failed to record attendance', {
-                description: 'Please try again.',
-            });
-        },
-    });
-
-    const deleteAttendanceMutation = useMutation({
-        mutationFn: async ({ lessonId, attendanceId }: { lessonId: string; attendanceId: string }) => {
-            await axiosClient.delete(`/api/lessons/${lessonId}/attendance?attendanceId=${attendanceId}`);
-        },
-        onSuccess: () => {
-            toast.success('Attendance Deleted', {
-                description: 'Attendance record has been deleted.',
-            });
-            if (selectedLesson) {
-                fetchAttendanceMutation.mutate(selectedLesson.id);
-            }
-        },
-        onError: (error) => {
-            toast.error('Failed to delete attendance', {
-                description: 'Please try again.',
-            });
-        },
-    });
-
     const openDialog = (mode: 'view' | 'edit' | 'create', lesson?: LessonsWithRelations) => {
         setViewMode(mode);
         if (lesson) {
             setSelectedLesson(lesson);
+            setSelectedDays(lesson.daysOfWeek);
             setValue('groupId', lesson.groupId || '');
             setValue('teacherId', lesson.teacherId || '');
             setValue('startTime', format(lesson.startTime, "yyyy-MM-dd'T'HH:mm"));
             setValue('endTime', format(lesson.endTime, "yyyy-MM-dd'T'HH:mm"));
             setValue('room', lesson.room);
-            setValue('status', lesson.status);
             setValue('desc', lesson.desc || '');
+            setValue('daysOfWeek', lesson.daysOfWeek);
         } else {
+            setSelectedDays([]);
             reset({
                 groupId: '',
                 teacherId: '',
                 startTime: format(new Date(), "yyyy-MM-dd'T'09:00"),
                 endTime: format(new Date(), "yyyy-MM-dd'T'10:30"),
                 room: '',
-                status: 'SCHEDULED',
                 desc: '',
+                daysOfWeek: [],
             });
         }
         setIsDialogOpen(true);
@@ -291,27 +234,16 @@ export default function LessonsPage() {
         setIsDeleteDialogOpen(true);
     };
 
-    const openAttendanceDialog = (lesson: LessonsWithRelations) => {
-        setSelectedLesson(lesson);
-        fetchAttendanceMutation.mutate(lesson.id);
-    };
-
     const closeDialog = () => {
         setIsDialogOpen(false);
         setSelectedLesson(null);
+        setSelectedDays([]);
         reset();
     };
 
     const closeDeleteDialog = () => {
         setIsDeleteDialogOpen(false);
         setSelectedLesson(null);
-    };
-
-    const closeAttendanceDialog = () => {
-        setIsAttendanceDialogOpen(false);
-        setAttendanceRecords([]);
-        setSelectedLesson(null);
-        setAttendanceSearch('');
     };
 
     const onSubmit = async (data: LessonFormData) => {
@@ -328,37 +260,25 @@ export default function LessonsPage() {
         }
     };
 
-    const getStatusBadge = (status: string) => {
-        const variants: Record<string, 'default' | 'secondary' | 'destructive' | 'outline'> = {
-            SCHEDULED: 'outline',
-            COMPLETED: 'default',
-            CANCELED: 'destructive',
+    const handleDayToggle = (day: DaysOfWeek) => {
+        const newDays = daysOfWeekValue.includes(day)
+            ? daysOfWeekValue.filter(d => d !== day)
+            : [...daysOfWeekValue, day];
+
+        setValue('daysOfWeek', newDays);
+        setSelectedDays(newDays);
+    };
+
+    const getDayColor = (day: DaysOfWeek) => {
+        const colors: Record<DaysOfWeek, string> = {
+            [DaysOfWeek.Monday]: 'bg-blue-500 hover:bg-blue-600',
+            [DaysOfWeek.Tuesday]: 'bg-purple-500 hover:bg-purple-600',
+            [DaysOfWeek.Wednesday]: 'bg-green-500 hover:bg-green-600',
+            [DaysOfWeek.Thursday]: 'bg-yellow-500 hover:bg-yellow-600',
+            [DaysOfWeek.Friday]: 'bg-orange-500 hover:bg-orange-600',
+            [DaysOfWeek.Saturday]: 'bg-red-500 hover:bg-red-600',
         };
-
-        return (
-            <Badge variant={variants[status] || 'outline'} className="capitalize">
-                {status.toLowerCase()}
-            </Badge>
-        );
-    };
-
-    const handleMarkAttendance = (studentId: string) => {
-        if (!selectedLesson || !selectedTeacher) return;
-
-        createAttendanceMutation.mutate({
-            lessonId: selectedLesson.id,
-            studentId,
-            teacherId: selectedTeacher.id,
-        });
-    };
-
-    const handleDeleteAttendance = (attendanceId: string) => {
-        if (!selectedLesson) return;
-
-        deleteAttendanceMutation.mutate({
-            lessonId: selectedLesson.id,
-            attendanceId,
-        });
+        return colors[day] || 'bg-gray-500';
     };
 
     const columns = [
@@ -366,25 +286,53 @@ export default function LessonsPage() {
             key: 'group',
             label: 'Group',
             sortable: true,
-            render: (group: any | null) => group?.name || 'No group'
+            render: (value: any, lesson: LessonsWithRelations) => {
+                // 'value' here is lesson.group (the group object)
+                // 'lesson' is the entire lesson object
+                return lesson.group?.name || 'No group';
+            }
         },
         {
             key: 'teacher',
             label: 'Teacher',
             sortable: true,
-            render: (teacher: any | null) => teacher?.user?.name || 'No teacher'
+            render: (value: any, lesson: LessonsWithRelations) => {
+                // 'value' here is lesson.teacher (the teacher object)
+                return lesson.teacher?.name || 'No teacher';
+            }
         },
         {
-            key: 'date',
-            label: 'Date',
-            sortable: true,
-            render: (lesson: LessonsWithRelations) => format(lesson.startTime, 'MMM dd, yyyy')
-        },
-        {
-            key: 'time',
-            label: 'Time',
+            key: 'daysOfWeek', // This should match the property name in the data
+            label: 'Days',
             sortable: false,
-            render: (lesson: LessonsWithRelations) => (
+            render: (value: any, lesson: LessonsWithRelations) => {
+                // 'value' here is lesson.daysOfWeek (the array of days)
+                // But for safety, we can also use the lesson parameter
+                const daysOfWeek = lesson.daysOfWeek || value || [];
+
+                if (!Array.isArray(daysOfWeek) || daysOfWeek.length === 0) {
+                    return <Badge variant="default" className="text-xs">No days</Badge>;
+                }
+
+                return (
+                    <div className="flex gap-1 flex-wrap">
+                        {daysOfWeek.map((day) => (
+                            <span
+                                key={day}
+                                className={"text-xs"}
+                            >
+                                {day.slice(0, 3)}
+                            </span>
+                        ))}
+                    </div>
+                );
+            }
+        },
+        {
+            key: 'startTime',
+            label: 'Time',
+            sortable: true,
+            render: (value: any, lesson: LessonsWithRelations) => (
                 <div className="flex items-center gap-1">
                     <Clock className="h-3 w-3" />
                     <span>{format(lesson.startTime, 'HH:mm')} - {format(lesson.endTime, 'HH:mm')}</span>
@@ -395,18 +343,23 @@ export default function LessonsPage() {
             key: 'room',
             label: 'Room',
             sortable: true,
-            render: (room: string) => (
+            render: (value: any, lesson: LessonsWithRelations) => (
                 <div className="flex items-center gap-1">
                     <MapPin className="h-3 w-3" />
-                    <span>{room}</span>
+                    <span>{lesson.room}</span>
                 </div>
             )
         },
         {
-            key: 'status',
-            label: 'Status',
-            sortable: true,
-            render: (status: string) => getStatusBadge(status)
+            key: 'group', // We'll use group key again for students
+            label: 'Students',
+            sortable: false,
+            render: (value: any, lesson: LessonsWithRelations) => (
+                <div className="flex items-center gap-1">
+                    <Users className="h-3 w-3" />
+                    <span>{lesson.group?.students?.length || 0}</span>
+                </div>
+            )
         },
     ];
 
@@ -416,6 +369,8 @@ export default function LessonsPage() {
         return eachDayOfInterval({ start, end });
     }, [selectedDate]);
 
+    const lessons = lessonsData?.lessons || [];
+
     const lessonsByDay = useMemo(() => {
         const lessonsByDay: Record<string, LessonsWithRelations[]> = {};
 
@@ -424,7 +379,7 @@ export default function LessonsPage() {
             lessonsByDay[dayStr] = [];
         });
 
-        lessons?.forEach(lesson => {
+        lessons?.forEach((lesson: LessonsWithRelations) => {
             const lessonDate = format(lesson.startTime, 'yyyy-MM-dd');
             if (lessonsByDay[lessonDate]) {
                 lessonsByDay[lessonDate].push(lesson);
@@ -433,24 +388,6 @@ export default function LessonsPage() {
 
         return lessonsByDay;
     }, [lessons, weekDays]);
-
-    const filteredAttendance = useMemo(() => {
-        if (!attendanceSearch) return attendanceRecords;
-        return attendanceRecords.filter(record =>
-            record.student.name.toLowerCase().includes(attendanceSearch.toLowerCase()) ||
-            record.student.phone.includes(attendanceSearch)
-        );
-    }, [attendanceRecords, attendanceSearch]);
-
-    const availableStudents = useMemo(() => {
-        if (!selectedLesson?.group?.students) return [];
-
-        const attendedStudentIds = new Set(attendanceRecords.map(record => record.studentId));
-
-        return selectedLesson.group.students.filter(student =>
-            !attendedStudentIds.has(student.id)
-        );
-    }, [selectedLesson, attendanceRecords]);
 
     if (isLoadingGroups || isLoadingTeachers) {
         return (
@@ -477,16 +414,24 @@ export default function LessonsPage() {
             <div className="flex items-center justify-between">
                 <div>
                     <h1 className="text-3xl font-bold">Lessons</h1>
-                    <p className="text-muted-foreground">Manage lesson schedules and attendance</p>
+                    <p className="text-muted-foreground">Manage lesson schedules</p>
                 </div>
-                <Button
-                    className="gap-2"
-                    onClick={() => openDialog('create')}
-                    disabled={isLoadingGroups || isLoadingTeachers}
-                >
-                    <Plus className="h-4 w-4" />
-                    Schedule Lesson
-                </Button>
+                <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-2">
+                        <Calendar className="h-4 w-4" />
+                        <span className="text-sm font-medium">
+                            {format(selectedDate, 'EEEE, MMMM d, yyyy')}
+                        </span>
+                    </div>
+                    <Button
+                        className="gap-2"
+                        onClick={() => openDialog('create')}
+                        disabled={isLoadingGroups || isLoadingTeachers}
+                    >
+                        <Plus className="h-4 w-4" />
+                        Create Lesson
+                    </Button>
+                </div>
             </div>
 
             <Tabs defaultValue="table" value={viewModeType} onValueChange={(v) => setViewModeType(v as 'table' | 'calendar')}>
@@ -498,52 +443,59 @@ export default function LessonsPage() {
                 <TabsContent value="table" className="space-y-4">
                     <Card>
                         <CardHeader>
-                            <CardTitle>Week of {format(startOfWeek(selectedDate, { weekStartsOn: 1 }), 'MMM dd')} - {format(endOfWeek(selectedDate, { weekStartsOn: 1 }), 'MMM dd, yyyy')}</CardTitle>
+                            <CardTitle>Lessons for {format(selectedDate, 'MMMM d, yyyy')}</CardTitle>
                             <CardDescription>
                                 <div className="flex items-center gap-2 mt-2">
                                     <Button
                                         variant="outline"
                                         size="sm"
-                                        onClick={() => setSelectedDate(new Date())}
+                                        onClick={() => handleDateChange(new Date())}
                                     >
                                         Today
                                     </Button>
                                     <Button
                                         variant="outline"
                                         size="icon"
-                                        onClick={() => setSelectedDate(prev => {
-                                            const newDate = new Date(prev);
-                                            newDate.setDate(newDate.getDate() - 7);
-                                            return newDate;
-                                        })}
+                                        onClick={() => handleDateChange(new Date(selectedDate.setDate(selectedDate.getDate() - 1)))}
                                     >
                                         <ChevronLeft className="h-4 w-4" />
                                     </Button>
                                     <Button
                                         variant="outline"
                                         size="icon"
-                                        onClick={() => setSelectedDate(prev => {
-                                            const newDate = new Date(prev);
-                                            newDate.setDate(newDate.getDate() + 7);
-                                            return newDate;
-                                        })}
+                                        onClick={() => handleDateChange(new Date(selectedDate.setDate(selectedDate.getDate() + 1)))}
                                     >
                                         <ChevronRight className="h-4 w-4" />
                                     </Button>
+                                    {selectedDate.getDay() === 1 && (
+                                        <Badge variant="outline" className="ml-2">
+                                            Monday (Sunday auto-adjusted)
+                                        </Badge>
+                                    )}
                                 </div>
                             </CardDescription>
                         </CardHeader>
                         <CardContent>
-                            {!isLoading && (
+                            {isLoading ? (
+                                <div className="flex items-center justify-center p-8">
+                                    <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                                    <span className="ml-2">Loading lessons...</span>
+                                </div>
+                            ) : lessons.length === 0 ? (
+                                <div className="text-center p-8">
+                                    <Calendar className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
+                                    <p className="text-muted-foreground">No lessons scheduled for this day</p>
+                                </div>
+                            ) : (
                                 <DataTable
                                     columns={columns}
-                                    data={lessons || []}
+                                    data={lessons as LessonsWithRelations[]}
                                     actions={(lesson) => (
                                         <div className="flex items-center gap-2">
                                             <Button
                                                 variant="ghost"
                                                 size="icon"
-                                                onClick={() => openDialog('view', lesson)}
+                                                onClick={() => openDialog('view', lesson as LessonsWithRelations)}
                                                 title="View details"
                                             >
                                                 <Eye className="h-4 w-4" />
@@ -551,15 +503,7 @@ export default function LessonsPage() {
                                             <Button
                                                 variant="ghost"
                                                 size="icon"
-                                                onClick={() => openAttendanceDialog(lesson)}
-                                                title="Attendance"
-                                            >
-                                                <Users className="h-4 w-4" />
-                                            </Button>
-                                            <Button
-                                                variant="ghost"
-                                                size="icon"
-                                                onClick={() => openDialog('edit', lesson)}
+                                                onClick={() => openDialog('edit', lesson as LessonsWithRelations)}
                                                 title="Edit"
                                             >
                                                 <Pencil className="h-4 w-4" />
@@ -567,7 +511,7 @@ export default function LessonsPage() {
                                             <Button
                                                 variant="ghost"
                                                 size="icon"
-                                                onClick={() => openDeleteDialog(lesson)}
+                                                onClick={() => openDeleteDialog(lesson as LessonsWithRelations)}
                                                 title="Delete"
                                             >
                                                 <Trash2 className="h-4 w-4 text-destructive" />
@@ -606,7 +550,7 @@ export default function LessonsPage() {
                                             <ChevronLeft className="h-4 w-4" />
                                         </Button>
                                         <span className="font-medium">
-                                            {format(startOfWeek(selectedDate, { weekStartsOn: 1 }), 'MMM dd')} - {format(endOfWeek(selectedDate, { weekStartsOn: 1 }), 'MMM dd, yyyy')}
+                                            Week {format(startOfWeek(selectedDate, { weekStartsOn: 1 }), 'w')}
                                         </span>
                                         <Button
                                             variant="outline"
@@ -626,29 +570,50 @@ export default function LessonsPage() {
                         <CardContent>
                             <div className="grid grid-cols-7 gap-2">
                                 {weekDays.map((day, index) => (
-                                    <div key={index} className="space-y-2">
+                                    <div
+                                        key={index}
+                                        className={`space-y-2 p-2 rounded-lg ${isSameDay(day, selectedDate) ? 'bg-accent' : ''}`}
+                                        onClick={() => handleDateChange(day)}
+                                    >
                                         <div className={`text-center font-medium ${isSameDay(day, new Date()) ? 'text-primary' : ''}`}>
-                                            {format(day, 'EEE')}
+                                            <div>{format(day, 'EEE')}</div>
                                             <div className={`text-lg ${isSameDay(day, new Date()) ? 'bg-primary text-primary-foreground rounded-full w-8 h-8 flex items-center justify-center mx-auto' : ''}`}>
                                                 {format(day, 'd')}
                                             </div>
+                                            {day.getDay() === 0 && (
+                                                <Badge variant="outline" className="text-xs mt-1">Sun→Mon</Badge>
+                                            )}
                                         </div>
-                                        <div className="space-y-2">
-                                            {lessonsByDay[format(day, 'yyyy-MM-dd')]?.map((lesson) => (
-                                                <div
-                                                    key={lesson.id}
-                                                    className="p-2 text-xs bg-secondary/50 rounded-md cursor-pointer hover:bg-secondary transition-colors"
-                                                    onClick={() => openDialog('view', lesson)}
-                                                >
-                                                    <div className="font-medium truncate">{lesson.group?.name}</div>
-                                                    <div className="text-muted-foreground truncate">
-                                                        {format(lesson.startTime, 'HH:mm')} - {lesson.room}
+                                        <ScrollArea className="h-40">
+                                            <div className="space-y-2">
+                                                {lessonsByDay[format(day, 'yyyy-MM-dd')]?.map((lesson) => (
+                                                    <div
+                                                        key={lesson.id}
+                                                        className="p-2 text-xs bg-secondary/50 rounded-md cursor-pointer hover:bg-secondary transition-colors"
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            openDialog('view', lesson);
+                                                        }}
+                                                    >
+                                                        <div className="font-medium truncate">{lesson.group?.name}</div>
+                                                        <div className="text-muted-foreground truncate">
+                                                            {format(lesson.startTime, 'HH:mm')} - {lesson.room}
+                                                        </div>
+                                                        <div>{lesson.teacher?.name}</div>
+                                                        <div className="flex gap-1 mt-1">
+                                                            {lesson.daysOfWeek.map(day => (
+                                                                <Badge
+                                                                    key={day}
+                                                                    className="text-xs h-4 px-1"
+                                                                >
+                                                                    {day.slice(0, 1)}
+                                                                </Badge>
+                                                            ))}
+                                                        </div>
                                                     </div>
-                                                    <div>{lesson.teacher?.user?.name}</div>
-                                                    {getStatusBadge(lesson.status)}
-                                                </div>
-                                            ))}
-                                        </div>
+                                                ))}
+                                            </div>
+                                        </ScrollArea>
                                     </div>
                                 ))}
                             </div>
@@ -659,54 +624,56 @@ export default function LessonsPage() {
 
             {/* Lesson Dialog */}
             <Dialog open={isDialogOpen} onOpenChange={closeDialog}>
-                <DialogContent className="max-w-md sm:max-w-lg">
+                <DialogContent className="max-w-2xl">
                     <DialogHeader>
                         <DialogTitle>
-                            {viewMode === 'create' ? 'Schedule New Lesson' : viewMode === 'edit' ? 'Edit Lesson' : 'View Lesson'}
+                            {viewMode === 'create' ? 'Create New Lesson' : viewMode === 'edit' ? 'Edit Lesson' : 'View Lesson'}
                         </DialogTitle>
                         <DialogDescription>
                             {viewMode === 'create'
-                                ? 'Fill in the details to schedule a new lesson'
+                                ? 'Fill in the details to create a new lesson'
                                 : viewMode === 'edit'
                                     ? 'Update lesson information'
                                     : 'Lesson details'}
                         </DialogDescription>
                     </DialogHeader>
                     <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-                        <div className="space-y-2">
-                            <Label htmlFor="groupId">Group *</Label>
-                            <select
-                                id="groupId"
-                                {...register('groupId')}
-                                disabled={viewMode === 'view' || isLoadingGroups}
-                                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                            >
-                                <option value="">Select a group</option>
-                                {groups?.map((group: Groups) => (
-                                    <option key={group.id} value={group.id}>
-                                        {group.name}
-                                    </option>
-                                ))}
-                            </select>
-                            {errors.groupId && <p className="text-xs text-destructive">{errors.groupId.message}</p>}
-                        </div>
+                        <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                                <Label htmlFor="groupId">Group *</Label>
+                                <select
+                                    id="groupId"
+                                    {...register('groupId')}
+                                    disabled={viewMode === 'view' || isLoadingGroups}
+                                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                                >
+                                    <option value="">Select a group</option>
+                                    {groups?.map((group: Groups & { course?: any; students?: any[] }) => (
+                                        <option key={group.id} value={group.id}>
+                                            {group.name} ({group.course?.name || 'No course'}) - {group.students?.length || 0} students
+                                        </option>
+                                    ))}
+                                </select>
+                                {errors.groupId && <p className="text-xs text-destructive">{errors.groupId.message}</p>}
+                            </div>
 
-                        <div className="space-y-2">
-                            <Label htmlFor="teacherId">Teacher *</Label>
-                            <select
-                                id="teacherId"
-                                {...register('teacherId')}
-                                disabled={viewMode === 'view' || isLoadingTeachers}
-                                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                            >
-                                <option value="">Select a teacher</option>
-                                {teachers?.map((teacher: Teacher) => (
-                                    <option key={teacher.id} value={teacher.id}>
-                                        {teacher.name}
-                                    </option>
-                                ))}
-                            </select>
-                            {errors.teacherId && <p className="text-xs text-destructive">{errors.teacherId.message}</p>}
+                            <div className="space-y-2">
+                                <Label htmlFor="teacherId">Teacher *</Label>
+                                <select
+                                    id="teacherId"
+                                    {...register('teacherId')}
+                                    disabled={viewMode === 'view' || isLoadingTeachers}
+                                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                                >
+                                    <option value="">Select a teacher</option>
+                                    {teachers?.map((teacher: Teacher) => (
+                                        <option key={teacher.id} value={teacher.id}>
+                                            {teacher.name} ({teacher.email})
+                                        </option>
+                                    ))}
+                                </select>
+                                {errors.teacherId && <p className="text-xs text-destructive">{errors.teacherId.message}</p>}
+                            </div>
                         </div>
 
                         <div className="grid grid-cols-2 gap-4">
@@ -746,18 +713,31 @@ export default function LessonsPage() {
                         </div>
 
                         <div className="space-y-2">
-                            <Label htmlFor="status">Status</Label>
-                            <select
-                                id="status"
-                                {...register('status')}
-                                disabled={viewMode === 'view'}
-                                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                            >
-                                <option value="SCHEDULED">Scheduled</option>
-                                <option value="COMPLETED">Completed</option>
-                                <option value="CANCELED">Canceled</option>
-                            </select>
-                            {errors.status && <p className="text-xs text-destructive">{errors.status.message}</p>}
+                            <Label>Days of Week *</Label>
+                            <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
+                                {Object.values(DaysOfWeek).map((day) => (
+                                    <Button
+                                        key={day}
+                                        type="button"
+                                        variant={selectedDays.includes(day) ? "default" : "outline"}
+                                        className={selectedDays.includes(day) ? getDayColor(day) : ''}
+                                        onClick={() => handleDayToggle(day)}
+                                        disabled={viewMode === 'view'}
+                                    >
+                                        {day.slice(0, 3)}
+                                        {selectedDays.includes(day) && (
+                                            <Check className="ml-1 h-3 w-3" />
+                                        )}
+                                    </Button>
+                                ))}
+                            </div>
+                            {errors.daysOfWeek && (
+                                <p className="text-xs text-destructive">{errors.daysOfWeek.message}</p>
+                            )}
+                            <input
+                                type="hidden"
+                                {...register('daysOfWeek')}
+                            />
                         </div>
 
                         <div className="space-y-2">
@@ -788,218 +768,15 @@ export default function LessonsPage() {
                                     {(createLessonMutation.isPending || updateLessonMutation.isPending) ? (
                                         <>
                                             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                            {viewMode === 'create' ? 'Scheduling...' : 'Saving...'}
+                                            {viewMode === 'create' ? 'Creating...' : 'Saving...'}
                                         </>
                                     ) : (
-                                        viewMode === 'create' ? 'Schedule Lesson' : 'Save Changes'
+                                        viewMode === 'create' ? 'Create Lesson' : 'Save Changes'
                                     )}
                                 </Button>
                             )}
                         </DialogFooter>
                     </form>
-                </DialogContent>
-            </Dialog>
-
-            {/* Attendance Dialog */}
-            <Dialog open={isAttendanceDialogOpen} onOpenChange={closeAttendanceDialog}>
-                <DialogContent className="max-w-2xl">
-                    <DialogHeader>
-                        <DialogTitle>Attendance for {selectedLesson?.group?.name}</DialogTitle>
-                        <DialogDescription>
-                            {selectedLesson && (
-                                <div className="space-y-1">
-                                    <div>Date: {format(selectedLesson.startTime, 'MMM dd, yyyy')}</div>
-                                    <div>Time: {format(selectedLesson.startTime, 'HH:mm')} - {format(selectedLesson.endTime, 'HH:mm')}</div>
-                                    <div>Teacher: {selectedLesson.teacher?.name}</div>
-                                </div>
-                            )}
-                        </DialogDescription>
-                    </DialogHeader>
-
-                    <div className="space-y-4">
-                        {/* Teacher Selection */}
-                        <div className="space-y-2">
-                            <Label>Mark Attendance As</Label>
-                            <Popover>
-                                <PopoverTrigger asChild>
-                                    <Button
-                                        variant="outline"
-                                        className="w-full justify-start h-10"
-                                    >
-                                        {selectedTeacher ? (
-                                            <div className="flex items-center justify-between w-full">
-                                                <div className="flex items-center gap-2">
-                                                    <User className="h-4 w-4" />
-                                                    <span className="truncate">{selectedTeacher.name}</span>
-                                                </div>
-                                                <div
-                                                    className="h-6 w-6 hover:bg-accent hover:text-accent-foreground inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-smooth focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0"
-                                                    onClick={(e) => {
-                                                        e.stopPropagation();
-                                                        setSelectedTeacher(null);
-                                                    }}
-                                                >
-                                                    <X className="h-3 w-3 hover:bg-accent hover:text-accent-foreground" />
-                                                </div>
-                                            </div>
-                                        ) : (
-                                            <div className="flex items-center gap-2 text-muted-foreground">
-                                                <User className="h-4 w-4" />
-                                                <span>Select teacher</span>
-                                            </div>
-                                        )}
-                                    </Button>
-                                </PopoverTrigger>
-                                <PopoverContent className="w-80 p-0 bg-popover border border-border shadow-lg rounded-md" align="start">
-                                    <div className="p-3 border-b">
-                                        <div className="relative">
-                                            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2" />
-                                            <Input
-                                                placeholder="Search teachers..."
-                                                value={teacherSearch}
-                                                onChange={(e) => setTeacherSearch(e.target.value)}
-                                                className="pl-10"
-                                            />
-                                        </div>
-                                    </div>
-                                    <ScrollArea className="h-64">
-                                        {teachers?.filter((teacher: Teacher) =>
-                                            teacher.name.toLowerCase().includes(teacherSearch.toLowerCase()) ||
-                                            teacher.email.toLowerCase().includes(teacherSearch.toLowerCase())
-                                        ).length > 0 ? (
-                                            <div className="p-1">
-                                                {teachers
-                                                    .filter((teacher: Teacher) =>
-                                                        teacher.name.toLowerCase().includes(teacherSearch.toLowerCase()) ||
-                                                        teacher.email.toLowerCase().includes(teacherSearch.toLowerCase())
-                                                    )
-                                                    .map((teacher: Teacher) => (
-                                                        <Button
-                                                            key={teacher.id}
-                                                            variant="ghost"
-                                                            className="w-full justify-start text-left h-auto py-2 px-3"
-                                                            onClick={() => setSelectedTeacher(teacher)}
-                                                        >
-                                                            <div className="flex items-center gap-3">
-                                                                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10">
-                                                                    <User className="h-4 w-4 text-primary" />
-                                                                </div>
-                                                                <div className="flex flex-col items-start">
-                                                                    <span className="font-medium">{teacher.name}</span>
-                                                                    {teacher.email && (
-                                                                        <span className="text-xs text-muted-foreground line-clamp-1">
-                                                                            {teacher.email}
-                                                                        </span>
-                                                                    )}
-                                                                </div>
-                                                            </div>
-                                                        </Button>
-                                                    ))}
-                                            </div>
-                                        ) : (
-                                            <div className="py-6 text-center">
-                                                <p className="text-sm text-muted-foreground">
-                                                    {teacherSearch ? 'No teachers found' : 'No teachers available'}
-                                                </p>
-                                            </div>
-                                        )}
-                                    </ScrollArea>
-                                </PopoverContent>
-                            </Popover>
-                        </div>
-
-                        {/* Search */}
-                        <div className="space-y-2">
-                            <Label>Search Students</Label>
-                            <Input
-                                placeholder="Search by name or phone..."
-                                value={attendanceSearch}
-                                onChange={(e) => setAttendanceSearch(e.target.value)}
-                            />
-                        </div>
-
-                        {/* Mark New Attendance */}
-                        {availableStudents.length > 0 && selectedTeacher && (
-                            <div className="space-y-2">
-                                <Label>Mark Attendance for:</Label>
-                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                                    {availableStudents.map((student) => (
-                                        <div
-                                            key={student.id}
-                                            className="flex items-center justify-between p-3 border rounded-lg hover:bg-accent transition-colors"
-                                        >
-                                            <div>
-                                                <div className="font-medium">{student.name}</div>
-                                                <div className="text-sm text-muted-foreground">{student.phone}</div>
-                                            </div>
-                                            <Button
-                                                size="sm"
-                                                onClick={() => handleMarkAttendance(student.id)}
-                                                disabled={createAttendanceMutation.isPending}
-                                            >
-                                                {createAttendanceMutation.isPending ? (
-                                                    <Loader2 className="h-4 w-4 animate-spin" />
-                                                ) : (
-                                                    'Present'
-                                                )}
-                                            </Button>
-                                        </div>
-                                    ))}
-                                </div>
-                            </div>
-                        )}
-
-                        {/* Attendance Records */}
-                        <div className="space-y-2">
-                            <Label>Attendance Records</Label>
-                            <div className="border rounded-lg">
-                                {filteredAttendance.length > 0 ? (
-                                    <div className="divide-y">
-                                        {filteredAttendance.map((record) => (
-                                            <div key={record.id} className="p-4 flex items-center justify-between">
-                                                <div>
-                                                    <div className="font-medium">{record.student.name}</div>
-                                                    <div className="text-sm text-muted-foreground">
-                                                        {record.student.phone} • Marked by: {record.teacher.name}
-                                                    </div>
-                                                    <div className="text-xs text-muted-foreground mt-1">
-                                                        {format(record.date, 'MMM dd, yyyy HH:mm')}
-                                                    </div>
-                                                    {record.desc && (
-                                                        <div className="text-sm mt-1">{record.desc}</div>
-                                                    )}
-                                                </div>
-                                                <Button
-                                                    variant="ghost"
-                                                    size="icon"
-                                                    onClick={() => handleDeleteAttendance(record.id)}
-                                                    disabled={deleteAttendanceMutation.isPending}
-                                                >
-                                                    <Trash2 className="h-4 w-4 text-destructive" />
-                                                </Button>
-                                            </div>
-                                        ))}
-                                    </div>
-                                ) : (
-                                    <div className="p-8 text-center">
-                                        <Users className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
-                                        <p className="text-muted-foreground">No attendance records yet</p>
-                                        {availableStudents.length === 0 && selectedLesson?.group?.students && (
-                                            <p className="text-sm text-muted-foreground mt-1">
-                                                All students have been marked
-                                            </p>
-                                        )}
-                                    </div>
-                                )}
-                            </div>
-                        </div>
-                    </div>
-
-                    <DialogFooter>
-                        <Button type="button" variant="outline" onClick={closeAttendanceDialog}>
-                            Close
-                        </Button>
-                    </DialogFooter>
                 </DialogContent>
             </Dialog>
 
@@ -1009,8 +786,22 @@ export default function LessonsPage() {
                     <DialogHeader>
                         <DialogTitle>Delete Lesson</DialogTitle>
                         <DialogDescription>
-                            Are you sure you want to delete the lesson for {selectedLesson?.group?.name} scheduled for {selectedLesson && format(selectedLesson.startTime, 'MMM dd, yyyy HH:mm')}?
-                            This will also delete all attendance records for this lesson.
+                            Are you sure you want to delete this lesson?
+                            <div className="mt-2 p-3 bg-muted rounded">
+                                <p className="font-medium">{selectedLesson?.group?.name}</p>
+                                <p className="text-sm">
+                                    {selectedLesson && format(selectedLesson.startTime, 'EEEE, MMMM d, yyyy HH:mm')}
+                                </p>
+                                <p className="text-sm">Teacher: {selectedLesson?.teacher?.name}</p>
+                                <p className="text-sm">Room: {selectedLesson?.room}</p>
+                                <div className="flex gap-1 mt-1">
+                                    {selectedLesson?.daysOfWeek?.map(day => (
+                                        <Badge key={day} variant="outline" className="text-xs">
+                                            {day.slice(0, 3)}
+                                        </Badge>
+                                    ))}
+                                </div>
+                            </div>
                         </DialogDescription>
                     </DialogHeader>
                     <DialogFooter>
