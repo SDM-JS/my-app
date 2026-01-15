@@ -18,6 +18,8 @@ import { Teacher, Subject } from '@prisma/client';
 import { CldUploadWidget } from 'next-cloudinary';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { useUser } from '@clerk/nextjs';
+import { noAvatarURL } from '@/lib/constants';
 
 const teacherSchema = z.object({
     name: z.string().min(2, 'Name must be at least 2 characters'),
@@ -37,6 +39,9 @@ type TeacherWithRelations = Teacher & {
 };
 
 export default function TeachersPage() {
+
+    const { user } = useUser()
+
     // Fetch teachers data
     const { data: teachersData, isLoading, refetch } = useQuery({
         queryKey: ["teachers"],
@@ -243,7 +248,7 @@ export default function TeachersPage() {
                 return (
                     <div className="flex items-center gap-3">
                         <Avatar className="h-10 w-10">
-                            <AvatarImage src={item.avatarUrl} />
+                            <AvatarImage src={item.avatarUrl || noAvatarURL} />
                             <AvatarFallback className="bg-primary/10">
                                 <User className="h-5 w-5 text-primary" />
                             </AvatarFallback>

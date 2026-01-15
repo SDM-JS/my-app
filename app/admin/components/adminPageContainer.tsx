@@ -3,7 +3,9 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Users, GraduationCap, CreditCard, CheckSquare, Calendar, TrendingUp, TrendingDown, Clock, MapPin, User, BookOpen } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
-
+import { useAuth } from '@clerk/nextjs';
+import { useRouter } from 'next/navigation';
+import { useEffect } from 'react';
 type Lesson = {
     id: string;
     teacher: string;
@@ -38,6 +40,33 @@ export default function AdminPageContainer({
 
     // Get current time for status display
     const currentTime = new Date();
+
+    const router = useRouter()
+    const { orgRole, isLoaded } = useAuth(); // Add isLoaded
+
+    // Use useEffect for navigation logic
+    useEffect(() => {
+        if (isLoaded && orgRole !== "org:admin") {
+            router.push("/");
+        }
+    }, [orgRole, isLoaded, router]);
+
+    // Show loading state while auth is loading
+    if (!isLoaded) {
+        return (
+            <div className="flex items-center justify-center h-64">
+                <div className="text-center">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
+                    <p className="mt-2 text-muted-foreground">Loading...</p>
+                </div>
+            </div>
+        );
+    }
+
+    // If not admin (after useEffect will redirect), show nothing
+    if (orgRole !== "org:admin") {
+        return null;
+    }
 
     const isLessonOngoing = (lessonTime: string) => {
         const [startTimeStr, endTimeStr] = lessonTime.split(' - ');

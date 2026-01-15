@@ -271,6 +271,7 @@ export default function AttendancesPage() {
 
     const handleDelete = async () => {
         if (selectedAttendance) {
+            setIsSubmitting(true);
             try {
                 // Delete attendance from database
                 await axiosClient.delete(`/api/attendances/${selectedAttendance.id}`);
@@ -290,6 +291,9 @@ export default function AttendancesPage() {
                     toast.info("Attendance was already removed");
                     closeDeleteDialog();
                 }
+            }
+            finally {
+                setIsSubmitting(false);
             }
         }
     };
@@ -707,8 +711,8 @@ export default function AttendancesPage() {
                         <Button type="button" variant="outline" onClick={closeDeleteDialog}>
                             Cancel
                         </Button>
-                        <Button type="button" variant="destructive" onClick={handleDelete}>
-                            Delete Record
+                        <Button type="button" variant="destructive" onClick={handleDelete} disabled={isSubmitting}>
+                            {isSubmitting ? "Deleting Record..." : "Delete record"}
                         </Button>
                     </DialogFooter>
                 </DialogContent>

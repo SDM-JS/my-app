@@ -41,7 +41,7 @@ const groupSchema = z.object({
 type GroupFormData = z.infer<typeof groupSchema>;
 
 type GroupWithRelations = Groups & {
-    cource: Course | null;
+    course: Course | null;
     teacher: Teacher | null;
     students: any[];
 };
@@ -51,14 +51,11 @@ const transformGroupsForTable = (groups: GroupWithRelations[]) => {
     return groups.map(group => ({
         id: group.id,
         name: group.name,
-        course: group.cource?.name || 'No course',
+        course: group.course?.name || 'No course',
         teacher: group.teacher?.name || 'No teacher',
         studentCount: group.students?.length || 0,
-        from: group.from,
-        to: group.to,
-        daysOfWeek: group.daysOfWeek,
         // Keep the original objects for render functions
-        _cource: group.cource,
+        _cource: group.course,
         _teacher: group.teacher,
         _students: group.students,
         _raw: group // Keep raw data for actions
@@ -177,8 +174,6 @@ export default function GroupsPage() {
             setValue('teacherId', originalGroup.teacherId || '');
 
             setValue('name', originalGroup.name);
-            setValue('from', new Date(originalGroup.from).toISOString().slice(11, 16));
-            setValue('to', new Date(originalGroup.to).toISOString().slice(11, 16));
 
             // Set days
             const days = originalGroup.daysOfWeek as DaysOfWeek[];

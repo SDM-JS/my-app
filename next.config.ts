@@ -8,5 +8,6 @@ const nextConfig: NextConfig = {
                 hostname: "ik.imagekit.io"
             }
         ]
-    }
+    },
+    allowedDevOrigins: ["http://192.168.123.111"]
 };

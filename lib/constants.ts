@@ -1,0 +1,1 @@
+export const noAvatarURL = "https://img.clerk.com/eyJ0eXBlIjoiZGVmYXVsdCIsImlpZCI6Imluc18zNnByaXFjWWNYQjRld1lqYXFBTEZHckRLa1kiLCJyaWQiOiJ1c2VyXzM4SHdFQmdGbXdRNmNqM3dvN0RhSWtpWEg5biJ9"

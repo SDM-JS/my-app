@@ -13,19 +13,24 @@ import {
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Loader2 } from 'lucide-react'
-import { useUser } from '@clerk/nextjs'
-import { useEffect } from 'react'
+import { useAuth, useUser } from '@clerk/nextjs'
+import { useEffect, useState } from 'react' // Added useState
 import { useRouter } from 'next/navigation'
 
 export default function SignInPage() {
-    const { isLoaded, isSignedIn, user } = useUser()
+    const { isLoaded, isSignedIn } = useUser()
+    const { orgRole } = useAuth();
     const router = useRouter()
+    const [shouldRedirect, setShouldRedirect] = useState(false) // Track redirect state
+
+    const splittedRole = orgRole?.split(":")[1]
 
     useEffect(() => {
-        if (isSignedIn && user?.publicMetadata?.role) {
-            router.push(`/${user.publicMetadata.role}`)
+        if (isSignedIn && splittedRole) {
+            setShouldRedirect(true)
+            router.push(`/${splittedRole}`)
         }
-    }, [isSignedIn, user, router])
+    }, [isSignedIn, splittedRole, router])
 
     // Don't render anything while checking auth state
     if (!isLoaded) {
@@ -39,7 +44,7 @@ export default function SignInPage() {
     }
 
     // If user is already signed in, show loading while redirect happens
-    if (isSignedIn) {
+    if (shouldRedirect || isSignedIn) {
         return (
             <div className="flex w-full items-center px-4 sm:justify-center justify-center h-screen">
                 <div className="flex items-center justify-center">

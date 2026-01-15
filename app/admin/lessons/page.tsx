@@ -399,10 +399,27 @@ export default function LessonsPage() {
                     </div>
                     <div className="h-9 w-28 bg-muted rounded-md animate-pulse"></div>
                 </div>
-                <div className="rounded-lg border bg-card p-8">
-                    <div className="flex items-center justify-center">
-                        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                        <span className="ml-2 text-lg">Loading lessons...</span>
+
+                <div className="rounded-lg border bg-card">
+                    <div className="p-6">
+                        <div className="h-10 w-full bg-muted rounded-md animate-pulse mb-4"></div>
+                        <div className="space-y-3">
+                            {[...Array(5)].map((_, i) => (
+                                <div key={i} className="flex items-center justify-between p-4 border rounded-lg">
+                                    <div className="flex items-center gap-4">
+                                        <div className="h-12 w-12 bg-muted rounded-full animate-pulse"></div>
+                                        <div className="space-y-2">
+                                            <div className="h-4 w-40 bg-muted rounded animate-pulse"></div>
+                                            <div className="h-3 w-28 bg-muted/50 rounded animate-pulse"></div>
+                                        </div>
+                                    </div>
+                                    <div className="flex gap-2">
+                                        <div className="h-6 w-16 bg-muted rounded-full animate-pulse"></div>
+                                        <div className="h-6 w-20 bg-muted rounded-full animate-pulse"></div>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
                     </div>
                 </div>
             </div>
