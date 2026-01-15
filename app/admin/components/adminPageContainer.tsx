@@ -1,30 +1,28 @@
 'use client';
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Users, GraduationCap, CreditCard, CheckSquare, Calendar, TrendingUp, TrendingDown, Clock, MapPin, User, BookOpen } from 'lucide-react';
+import { Users, GraduationCap, CreditCard, CheckSquare, Calendar, TrendingUp, TrendingDown, Clock, MapPin, User, Eye, Pencil, Trash2 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@clerk/nextjs';
 import { useRouter } from 'next/navigation';
-import { useEffect } from 'react';
-type Lesson = {
-    id: string;
-    teacher: string;
-    room: string;
-    time: string;
-    group: string;
-    course: string;
-};
+import { useEffect, useMemo, useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { addDays, format } from 'date-fns';
+import { toast } from 'sonner';
+import { axiosClient } from '@/lib/axiosClient';
+import DataTable from '@/app/components/DataTable';
+import { Button } from '@/components/ui/button';
+import { Loader2 } from 'lucide-react';
 
-type props = {
-    totalStudents: number,
+type Props = {
+    totalStudents: number;
     totalTeachers: number;
     paymentsForMonth: number;
     attendanceRate: number;
     newStudentsMonth: number;
-    pers: number,
-    persState: "asc" | "desc",
-    upcomingLessons: Lesson[],
-}
+    pers: number;
+    persState: "asc" | "desc";
+};
 
 export default function AdminPageContainer({
     totalStudents,
@@ -34,15 +32,206 @@ export default function AdminPageContainer({
     newStudentsMonth,
     pers,
     persState,
-    upcomingLessons
-}: props) {
+}: Props) {
     const fixedPers = (100 - pers).toFixed(2);
+    const [selectedDate, setSelectedDate] = useState<Date>(new Date());
 
-    // Get current time for status display
-    const currentTime = new Date();
+    const router = useRouter();
+    const { orgRole, isLoaded } = useAuth();
 
-    const router = useRouter()
-    const { orgRole, isLoaded } = useAuth(); // Add isLoaded
+    // Get target date (if Sunday, show Monday)
+    const getTargetDate = () => {
+        const today = new Date();
+        const dayOfWeek = today.getDay(); // 0 = Sunday, 1 = Monday, etc.
+
+        if (dayOfWeek === 0) { // Sunday
+            return addDays(today, 1); // Monday
+        }
+
+        return today;
+    };
+
+    // Fetch lessons using React Query
+    const { data: lessonsData, isLoading, error } = useQuery({
+        queryKey: ["dashboard-lessons", selectedDate.toISOString().split('T')[0]],
+        queryFn: async () => {
+            const targetDate = getTargetDate();
+            setSelectedDate(targetDate);
+
+            // Show toast for Sunday
+            if (new Date().getDay() === 0) {
+                toast.info('Showing Monday schedule', {
+                    description: 'Sunday automatically adjusted to Monday'
+                });
+            }
+
+            const { data } = await axiosClient.get("/api/lessons/date", {
+                params: {
+                    date: targetDate.toISOString().split('T')[0]
+                }
+            });
+            return data;
+        },
+        enabled: isLoaded && orgRole === "org:admin",
+    });
+
+    // Get day name for display
+    const getDayName = (date: Date) => {
+        const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+        return days[date.getDay()];
+    };
+
+    // Define columns for DataTable
+    const columns = useMemo(() => [
+        {
+            key: 'group',
+            label: 'Group',
+            sortable: true,
+            render: (value: any, lesson: any) => {
+                return lesson.group?.name || 'No group';
+            }
+        },
+        {
+            key: 'course',
+            label: 'Course',
+            sortable: true,
+            render: (value: any, lesson: any) => {
+                return lesson.group?.course?.name || 'No course';
+            }
+        },
+        {
+            key: 'teacher',
+            label: 'Teacher',
+            sortable: true,
+            render: (value: any, lesson: any) => {
+                return lesson.teacher?.name || lesson.group?.teacher?.name || 'No teacher';
+            }
+        },
+        {
+            key: 'time',
+            label: 'Time',
+            sortable: true,
+            render: (value: any, lesson: any) => {
+                const startTime = new Date(lesson.startTime);
+                const endTime = new Date(lesson.endTime);
+                return (
+                    <div className="flex items-center gap-1">
+                        <Clock className="h-3 w-3" />
+                        <span>{format(startTime, 'HH:mm')} - {format(endTime, 'HH:mm')}</span>
+                    </div>
+                );
+            }
+        },
+        {
+            key: 'room',
+            label: 'Room',
+            sortable: true,
+            render: (value: any, lesson: any) => (
+                <div className="flex items-center gap-1">
+                    <MapPin className="h-3 w-3" />
+                    <span>{lesson.room}</span>
+                </div>
+            )
+        },
+        {
+            key: 'students',
+            label: 'Students',
+            sortable: false,
+            render: (value: any, lesson: any) => (
+                <div className="flex items-center gap-1">
+                    <Users className="h-3 w-3" />
+                    <span>{lesson.group?.students?.length || 0}</span>
+                </div>
+            )
+        },
+        {
+            key: 'status',
+            label: 'Status',
+            sortable: false,
+            render: (value: any, lesson: any) => {
+                const currentTime = new Date();
+                const startTime = new Date(lesson.startTime);
+                const endTime = new Date(lesson.endTime);
+
+                // Create lesson date with today's date but lesson's time
+                const lessonStart = new Date();
+                lessonStart.setHours(
+                    startTime.getHours(),
+                    startTime.getMinutes(),
+                    0,
+                    0
+                );
+
+                const lessonEnd = new Date();
+                lessonEnd.setHours(
+                    endTime.getHours(),
+                    endTime.getMinutes(),
+                    0,
+                    0
+                );
+
+                const isOngoing = currentTime >= lessonStart && currentTime <= lessonEnd;
+                const isPast = currentTime > lessonEnd;
+
+                if (isOngoing) {
+                    return (
+                        <Badge className="bg-green-500 hover:bg-green-600">
+                            <span className="flex items-center gap-1">
+                                <div className="h-2 w-2 rounded-full bg-white animate-pulse" />
+                                Ongoing
+                            </span>
+                        </Badge>
+                    );
+                } else if (isPast) {
+                    return <Badge variant="outline">Completed</Badge>;
+                } else {
+                    return <Badge variant="outline">Upcoming</Badge>;
+                }
+            }
+        }
+    ], []);
+
+    // Format data for DataTable
+    const tableData = useMemo(() => {
+        if (!lessonsData?.lessons) return [];
+
+        return lessonsData.lessons.map((lesson: any) => {
+            // Parse lesson times for current day
+            const startTime = new Date(lesson.startTime);
+            const endTime = new Date(lesson.endTime);
+
+            // Create lesson date with today's date but lesson's time
+            const today = getTargetDate();
+            const lessonStart = new Date(today);
+            lessonStart.setHours(
+                startTime.getHours(),
+                startTime.getMinutes(),
+                0,
+                0
+            );
+
+            const lessonEnd = new Date(today);
+            lessonEnd.setHours(
+                endTime.getHours(),
+                endTime.getMinutes(),
+                0,
+                0
+            );
+
+            return {
+                ...lesson,
+                id: lesson.id,
+                group: lesson.group,
+                teacher: lesson.teacher,
+                room: lesson.room,
+                startTime: lessonStart,
+                endTime: lessonEnd,
+                originalStartTime: startTime, // Keep original for reference
+                originalEndTime: endTime,
+                isOngoing: false // Will be calculated in status column
+            };
+        });
+    }, [lessonsData]);
 
     // Use useEffect for navigation logic
     useEffect(() => {
@@ -68,25 +257,16 @@ export default function AdminPageContainer({
         return null;
     }
 
-    const isLessonOngoing = (lessonTime: string) => {
-        const [startTimeStr, endTimeStr] = lessonTime.split(' - ');
-        const [startHour, startMinute] = startTimeStr.split(':').map(Number);
-        const [endHour, endMinute] = endTimeStr.split(':').map(Number);
-
-        const startTime = new Date();
-        startTime.setHours(startHour, startMinute, 0, 0);
-
-        const endTime = new Date();
-        endTime.setHours(endHour, endMinute, 0, 0);
-
-        return currentTime >= startTime && currentTime <= endTime;
-    };
-
     return (
         <div className="space-y-6">
             <div>
                 <h1 className="text-3xl font-bold">Dashboard</h1>
-                <p className="text-muted-foreground">Welcome back! Here's what's happening today.</p>
+                <p className="text-muted-foreground">
+                    {selectedDate.toDateString() === new Date().toDateString()
+                        ? "Today's overview"
+                        : `Showing lessons for ${getDayName(selectedDate)} (${format(selectedDate, 'MMM d, yyyy')})`
+                    }
+                </p>
             </div>
 
             {/* Stats Grid */}
@@ -121,7 +301,7 @@ export default function AdminPageContainer({
                         <CreditCard className="h-5 w-5 text-amber-500" />
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold">${paymentsForMonth.toLocaleString()}</div>
+                        <div className="text-2xl font-bold">${paymentsForMonth}</div>
                         <p className="text-xs text-muted-foreground mt-1">
                             {persState === "desc" && <span><TrendingUp className="inline h-3 w-3 text-green-500" /> {pers.toFixed(2)}% from last month</span>}
                             {persState === "asc" && <span><TrendingDown className="inline h-3 w-3 text-red-500" />  -{fixedPers}% from last month</span>}
@@ -141,74 +321,47 @@ export default function AdminPageContainer({
                 </Card>
             </div>
 
-            {/* Upcoming Lessons */}
+            {/* Lessons Table */}
             <Card>
                 <CardHeader>
                     <CardTitle className="flex items-center gap-2">
                         <Calendar className="h-5 w-5" />
-                        Today's Lessons
+                        {selectedDate.toDateString() === new Date().toDateString()
+                            ? "Today's Lessons"
+                            : `${getDayName(selectedDate)}'s Lessons`
+                        }
+                        {selectedDate.getDay() === 1 && new Date().getDay() === 0 && (
+                            <Badge variant="outline" className="ml-2">
+                                Monday (Sunday auto-adjusted)
+                            </Badge>
+                        )}
                     </CardTitle>
                 </CardHeader>
                 <CardContent>
-                    {upcomingLessons.length === 0 ? (
-                        <div className="text-center py-8">
+                    {isLoading ? (
+                        <div className="flex items-center justify-center p-8">
+                            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                            <span className="ml-2">Loading lessons...</span>
+                        </div>
+                    ) : error ? (
+                        <div className="text-center p-8">
+                            <p className="text-red-500">Failed to load lessons</p>
+                        </div>
+                    ) : tableData.length === 0 ? (
+                        <div className="text-center p-8">
                             <Calendar className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
-                            <p className="text-muted-foreground">No lessons scheduled for today</p>
+                            <p className="text-muted-foreground">No lessons scheduled</p>
                         </div>
                     ) : (
                         <div className="space-y-4">
-                            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                                {upcomingLessons.map((lesson) => (
-                                    <div
-                                        key={lesson.id}
-                                        className={`border rounded-lg p-4 transition-smooth hover:shadow-md ${isLessonOngoing(lesson.time)
-                                            ? 'border-primary bg-primary/5'
-                                            : 'border-border'
-                                            }`}
-                                    >
-                                        <div className="flex items-start justify-between mb-3">
-                                            <div>
-                                                <h3 className="font-semibold text-lg">{lesson.group}</h3>
-                                                <p className="text-sm text-muted-foreground">{lesson.course}</p>
-                                            </div>
-                                            <Badge
-                                                variant={isLessonOngoing(lesson.time) ? "default" : "outline"}
-                                                className={isLessonOngoing(lesson.time) ? "bg-green-500 hover:bg-green-600" : ""}
-                                            >
-                                                {isLessonOngoing(lesson.time) ? (
-                                                    <span className="flex items-center gap-1">
-                                                        <div className="h-2 w-2 rounded-full bg-white animate-pulse" />
-                                                        Ongoing
-                                                    </span>
-                                                ) : (
-                                                    "Upcoming"
-                                                )}
-                                            </Badge>
-                                        </div>
+                            <DataTable
+                                columns={columns}
+                                data={tableData}
 
-                                        <div className="space-y-3">
-                                            <div className="flex items-center gap-2 text-sm">
-                                                <User className="h-4 w-4 text-muted-foreground" />
-                                                <span className="font-medium">{lesson.teacher}</span>
-                                            </div>
-
-                                            <div className="flex items-center gap-2 text-sm">
-                                                <Clock className="h-4 w-4 text-muted-foreground" />
-                                                <span className="font-medium">{lesson.time}</span>
-                                            </div>
-
-                                            <div className="flex items-center gap-2 text-sm">
-                                                <MapPin className="h-4 w-4 text-muted-foreground" />
-                                                <span>{lesson.room}</span>
-                                            </div>
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-
+                            />
                             {/* Summary */}
                             <div className="text-center text-sm text-muted-foreground pt-2">
-                                {upcomingLessons.length} lessons scheduled for today
+                                Showing {tableData.length} lessons for {getDayName(selectedDate)}
                             </div>
                         </div>
                     )}
