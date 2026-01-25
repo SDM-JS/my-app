@@ -1,5 +1,5 @@
 "use client"
-import { useEffect, useState } from 'react'
+import React, { useEffect, useState } from 'react'
 
 const HydrationWarningProvider = ({ children }: React.PropsWithChildren) => {
     const [mount, setMount] = useState(false)

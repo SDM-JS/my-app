@@ -20,21 +20,21 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body suppressHydrationWarning>
-        <ClerkProvider signInUrl='/' signInForceRedirectUrl={"/"}>
+        {/* <ClerkProvider signInUrl='/' signInForceRedirectUrl={"/"}> */}
 
-          <QueryClientPro>
-            <ThemeProvider
-              attribute="class"
-              defaultTheme="light"
-              enableSystem
-              disableTransitionOnChange
-            >
-              {children}
-              <Toaster position='bottom-center' />
-            </ThemeProvider>
-          </QueryClientPro>
+        <QueryClientPro>
+          <ThemeProvider
+            attribute="class"
+            defaultTheme="light"
+            enableSystem
+            disableTransitionOnChange
+          >
+            {children}
+            <Toaster position='bottom-center' />
+          </ThemeProvider>
+        </QueryClientPro>
 
-        </ClerkProvider>
+        {/* </ClerkProvider> */}
       </body>
     </html >
   );

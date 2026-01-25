@@ -1,7 +1,7 @@
 'use client';
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Users, GraduationCap, CreditCard, CheckSquare, Calendar, TrendingUp, TrendingDown, Clock, MapPin, User, Eye, Pencil, Trash2 } from 'lucide-react';
+import { Users, GraduationCap, CreditCard, CheckSquare, Calendar, TrendingUp, TrendingDown, Clock, MapPin } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@clerk/nextjs';
 import { useRouter } from 'next/navigation';

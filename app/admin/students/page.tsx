@@ -14,7 +14,7 @@ import {
 import { cameFrom, Student as PStudent, Course, Groups } from "@prisma/client"
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Plus, Pencil, Trash2, Eye, BookOpen, User } from 'lucide-react';
+import { Plus, Pencil, Trash2, Eye, User } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -36,7 +36,7 @@ const studentSchema = z.object({
 type StudentFormData = z.infer<typeof studentSchema>;
 
 type StudentWithRelations = PStudent & {
-    cources: Course[];
+    courses: Course[];
     group: Groups | null;
     cameFrom: cameFrom
 };
@@ -124,7 +124,7 @@ export default function StudentsPage() {
                 : birthday.toISOString().split('T')[0];
             setValue('birthday', formattedBirthday);
 
-            setValue('courseId', student.cources?.[0]?.id || '');
+            setValue('courseId', student.courses?.[0]?.id || '');
             setValue('groupId', student.groupId || '');
             setValue('cameFromId', student.cameFrom?.id || undefined);
         } else {
@@ -184,13 +184,13 @@ export default function StudentsPage() {
                 // Update student
                 await updateStudent(selectedStudent.id, data);
                 toast.success("Student updated successfully!");
-                refetch();
+                await refetch();
                 closeDialog();
             } else if (viewMode === 'create') {
                 // Create new student
                 await createStudent(data);
                 toast.success("Student created successfully!");
-                refetch();
+                await refetch();
                 closeDialog();
             }
         } catch (error: any) {
@@ -246,11 +246,11 @@ export default function StudentsPage() {
             key: 'courses',
             label: 'Course',
             sortable: true,
-            render: (cources: Course[] | undefined) => {
-                if (!cources || cources.length === 0) {
+            render: (courses: Course[] | undefined) => {
+                if (!courses || courses.length === 0) {
                     return <span className="text-muted-foreground">No course</span>;
                 }
-                return cources[0]?.name || 'No course';
+                return courses[0]?.name || 'No course';
             }
         },
         {

@@ -18,8 +18,6 @@ export async function GET() {
                 createdAt: 'desc'
             }
         });
-
-        console.log(students)
         return NextResponse.json(students);
     } catch (error) {
         console.error('Error fetching students:', error);

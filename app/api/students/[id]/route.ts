@@ -15,9 +15,8 @@ export async function PUT(
                 name: body.name,
                 phone: body.phone,
                 birthday: new Date(body.birthday),
-                cameText: body.cameFrom || undefined,
                 ...(body.courseId && {
-                    cources: {
+                    courses: {
                         connect: { id: body.courseId }
                     }
                 }),
@@ -25,14 +24,14 @@ export async function PUT(
                     group: {
                         connect: { id: body.groupId }
                     }
-                })
+                }),
+                cameText: body.cameText,
             },
             include: {
                 courses: true,
                 group: true,
             }
         });
-
         return NextResponse.json(student);
     } catch (error) {
         console.error('Error updating student:', error);
