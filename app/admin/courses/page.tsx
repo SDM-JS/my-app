@@ -233,13 +233,13 @@ export default function CoursesPage() {
                 // Update course
                 await updateCourse(selectedCourse.id, data);
                 toast.success("Course updated successfully!");
-                refetch();
+                await refetch();
                 closeDialog();
             } else if (viewMode === 'create') {
                 // Create new course
                 await createCourse(data);
                 toast.success("Course created successfully!");
-                refetch();
+                await refetch();
                 closeDialog();
             }
         } catch (error: any) {
@@ -284,7 +284,7 @@ export default function CoursesPage() {
             label: 'Description',
             sortable: true,
             render: (value: string) => (
-                <span className="line-clamp-1 max-w-[200px]">{value}</span>
+                <span className="line-clamp-1 max-w-50">{value}</span>
             )
         },
         {
@@ -299,7 +299,7 @@ export default function CoursesPage() {
             key: 'subject',
             label: 'Subject',
             sortable: true,
-            render: (value: string, item: any) => {
+            render: (value: string) => {
                 return value || <span className="text-muted-foreground">No subject</span>;
             }
         },

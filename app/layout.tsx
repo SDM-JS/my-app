@@ -4,6 +4,7 @@ import { ThemeProvider } from '@/components/providers/next.theme.provider';
 import { Toaster } from '@/components/ui/sonner';
 import QueryClientPro from '@/components/providers/query.client.provider';
 import { ClerkProvider } from "@clerk/nextjs"
+import React from "react";
 
 export const metadata: Metadata = {
   title: 'EduCRM - Educational Center Management',
@@ -20,7 +21,7 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body suppressHydrationWarning>
-        {/* <ClerkProvider signInUrl='/' signInForceRedirectUrl={"/"}> */}
+         <ClerkProvider signInUrl='/' signInForceRedirectUrl={"/"}>
 
         <QueryClientPro>
           <ThemeProvider
@@ -34,7 +35,7 @@ export default function RootLayout({
           </ThemeProvider>
         </QueryClientPro>
 
-        {/* </ClerkProvider> */}
+         </ClerkProvider>
       </body>
     </html >
   );

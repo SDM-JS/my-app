@@ -3,7 +3,7 @@
 import { useMemo, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import DataTable from '@/app/components/DataTable';
-import { Plus, Eye, Pencil, Trash2, GraduationCap, X, Search, User } from 'lucide-react';
+import { Plus, Eye, Pencil, Trash2, X, Search, User } from 'lucide-react';
 import {
     Dialog,
     DialogContent,

@@ -1,5 +1,6 @@
 import Sidebar from '@/app/components/layout/Sidebar';
 import Header from '@/app/components/layout/Header';
+import React from "react";
 
 export default async function TeacherLayout({ children }: { children: React.ReactNode }) {
 
@@ -10,7 +11,7 @@ export default async function TeacherLayout({ children }: { children: React.Reac
             <div className="lg:ml-64">
                 {/* Show main Header only on desktop */}
                 <div className="hidden lg:block">
-                    <Header />
+                    {/* <Header /> */}
                 </div>
                 {/* Mobile spacer - replaces the need for mobile header in Sidebar */}
                 <div className="h-16 lg:hidden" />

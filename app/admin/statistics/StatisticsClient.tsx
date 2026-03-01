@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState } from 'react';
 import * as XLSX from 'xlsx';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -14,10 +14,7 @@ import {
     BookOpen,
     BarChart3,
     PieChart,
-    TrendingDown,
-    Clock,
     CheckCircle,
-    XCircle,
     Download,
     RefreshCw,
     FileSpreadsheet,
@@ -117,12 +114,7 @@ export default function StatisticsClient({
             maximumFractionDigits: 0
         }).format(amount);
     };
-
-    const formatPercentage = (value: number) => {
-        return `${value.toFixed(1)}%`;
-    };
-
-    // Enhanced attendance data with calculations
+// Enhanced attendance data with calculations
     const enhancedAttendanceData = attendanceData.map(day => ({
         ...day,
         total: day.present + day.absent,
@@ -269,7 +261,7 @@ export default function StatisticsClient({
                 const sheet = workbook.Sheets[sheetName];
                 const maxWidths = {};
                 XLSX.utils.sheet_to_json(sheet, { header: 1 }).forEach(row => {
-                    row.forEach((cell, colIndex) => {
+                    row.forEach((cell: any, colIndex: any) => {
                         const cellLength = String(cell).length;
                         maxWidths[colIndex] = Math.max(maxWidths[colIndex] || 0, cellLength);
                     });
@@ -415,7 +407,7 @@ export default function StatisticsClient({
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div>
                     <h1 className="text-3xl font-bold">Statistics Dashboard</h1>
-                    <p className="text-muted-foreground">Monitor your academy's performance and insights</p>
+                    <p className="text-muted-foreground">Monitor your academy&#39;s performance and insights</p>
                 </div>
                 <div className="flex items-center gap-2">
                     <Button variant="outline" size="sm" onClick={handleRefresh} disabled={isRefreshing}>
@@ -473,7 +465,7 @@ export default function StatisticsClient({
                             <div>
                                 <p className="text-sm font-medium text-blue-800">Data Export Available</p>
                                 <p className="text-xs text-blue-600">
-                                    Click "Export Data" to download Excel reports with all dashboard data
+                                    Click &#34;Export Data&#34; to download Excel reports with all dashboard data
                                 </p>
                             </div>
                         </div>

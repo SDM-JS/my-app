@@ -1,5 +1,6 @@
 import Sidebar from '@/app/components/layout/Sidebar';
 import Header from '@/app/components/layout/Header';
+import React from "react";
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
     // const { userId } = await auth()
@@ -21,7 +22,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
             <div className="lg:ml-64">
                 {/* Show main Header only on desktop */}
                 <div className="hidden lg:block">
-                    {/*<Header />*/}
+                    <Header />
                 </div>
                 {/* Mobile spacer - replaces the need for mobile header in Sidebar */}
                 <div className="h-16 lg:hidden" />

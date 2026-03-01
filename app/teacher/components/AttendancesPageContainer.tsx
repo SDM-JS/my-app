@@ -175,7 +175,7 @@ export default function TeacherAttendancesPage() {
                                         mode="single"
                                         selected={selectedDate}
                                         onSelect={(date) => date && setValue('date', date)}
-                                        initialFocus
+                                        autoFocus
                                         disabled={(date) =>
                                             date > new Date() || date < new Date("1900-01-01")
                                         }

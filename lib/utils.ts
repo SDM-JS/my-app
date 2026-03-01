@@ -6,7 +6,7 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 export const getDayOfWeekExcludingSunday = (date: Date) => {
-  if (!(date instanceof Date) || isNaN(date.getTime())) return null;
+  if (isNaN(date.getTime())) return null;
   return date.getDay() === 0 ? null :
     ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][date.getDay()];
 };

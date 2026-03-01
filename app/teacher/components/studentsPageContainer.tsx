@@ -83,7 +83,7 @@ export const TeacherStudentsPage = ({ students }: { students: StudentData[] }) =
             key: 'progress',
             label: 'Progress',
             sortable: true,
-            render: (value: number, item: StudentData) => (
+            render: (value: number) => (
                 <div className="flex items-center gap-2">
                     <div className="h-2 w-20 rounded-full bg-muted overflow-hidden">
                         <div

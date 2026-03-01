@@ -336,7 +336,7 @@ export default function AttendancesPage() {
             key: 'student',
             label: 'Student',
             sortable: true,
-            render: (value: string, item: any) => {
+            render: (value: string) => {
                 return value || <span className="text-muted-foreground">No student</span>;
             }
         },
@@ -344,7 +344,7 @@ export default function AttendancesPage() {
             key: 'teacher',
             label: 'Teacher',
             sortable: true,
-            render: (value: string, item: any) => {
+            render: (value: string) => {
                 return value || <span className="text-muted-foreground">No teacher</span>;
             }
         },

@@ -11,7 +11,6 @@ import { addDays, format } from 'date-fns';
 import { toast } from 'sonner';
 import { axiosClient } from '@/lib/axiosClient';
 import DataTable from '@/app/components/DataTable';
-import { Button } from '@/components/ui/button';
 import { Loader2 } from 'lucide-react';
 
 type Props = {
@@ -56,14 +55,7 @@ export default function AdminPageContainer({
         queryKey: ["dashboard-lessons", selectedDate.toISOString().split('T')[0]],
         queryFn: async () => {
             const targetDate = getTargetDate();
-            setSelectedDate(targetDate);
-
-            // Show toast for Sunday
-            if (new Date().getDay() === 0) {
-                toast.info('Showing Monday schedule', {
-                    description: 'Sunday automatically adjusted to Monday'
-                });
-            }
+            setSelectedDate(targetDate)
 
             const { data } = await axiosClient.get("/api/lessons/date", {
                 params: {

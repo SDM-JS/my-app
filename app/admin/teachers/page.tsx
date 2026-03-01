@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import DataTable from '@/app/components/DataTable';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Plus, Pencil, Trash2, Eye, Star, User, Upload, X } from 'lucide-react';
+import { Plus, Pencil, Trash2, Eye, Star, User,  X } from 'lucide-react';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
@@ -15,7 +15,6 @@ import { toast } from 'sonner';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { axiosClient } from '@/lib/axiosClient';
 import { Teacher, Subject } from '@prisma/client';
-import { CldUploadWidget } from 'next-cloudinary';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useUser } from '@clerk/nextjs';
@@ -25,7 +24,7 @@ const teacherSchema = z.object({
     name: z.string().min(2, 'Name must be at least 2 characters'),
     phone: z.string().min(10, 'Phone number must be valid'),
     password: z.string().min(8, 'Password must be at least 8 characters').optional(),
-    email: z.string().email('Invalid email address'),
+    email: z.email('Invalid email address'),
     birthday: z.string().min(1, 'Birthday is required'),
     subjectIds: z.array(z.string()).min(1, 'At least one subject is required'),
     avatarUrl: z.string().optional()
@@ -40,7 +39,7 @@ type TeacherWithRelations = Teacher & {
 
 export default function TeachersPage() {
 
-    const { user } = useUser()
+    // const { user } = useUser()
 
     // Fetch teachers data
     const { data: teachersData, isLoading, refetch } = useQuery({
@@ -191,13 +190,13 @@ export default function TeachersPage() {
                 // Update teacher
                 await updateTeacher(selectedTeacher.id, data);
                 toast.success("Teacher updated successfully!");
-                refetch();
+                await refetch();
                 closeDialog();
             } else if (viewMode === 'create') {
                 // Create new teacher
                 await createTeacher(data);
                 toast.success("Teacher created successfully!");
-                refetch();
+                await refetch();
                 closeDialog();
             }
         } catch (error: any) {

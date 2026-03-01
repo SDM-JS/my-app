@@ -119,7 +119,7 @@ export default async function TeacherDashboard() {
                                     <p className="text-sm font-medium">{format(lesson.endTime, "P")}</p>
                                     <p className="text-sm text-muted-foreground">{lesson.room}</p>
                                 </div>
-                                <Badge variant="outline">{lesson.status}</Badge>
+                                <Badge variant="outline">{lesson.desc}</Badge>
                             </div>
                         ))}
                     </div>

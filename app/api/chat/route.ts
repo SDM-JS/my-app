@@ -22,9 +22,6 @@ async function main() {
 
     console.log('✅ Database cleared');
 
-    // Create password hash
-    const passwordHash = await bcrypt.hash('password123', 10);
-
     // Create Admins
     console.log('👨‍💼 Creating admins...');
     const admins = await Promise.all(
@@ -68,7 +65,7 @@ async function main() {
     // Create Teachers
     console.log('👨‍🏫 Creating teachers...');
     const teachers = await Promise.all(
-        Array.from({ length: 15 }).map(async (_, index) => {
+        Array.from({ length: 15 }).map(async () => {
             return prisma.teacher.create({
                 data: {
                     name: faker.person.fullName(),

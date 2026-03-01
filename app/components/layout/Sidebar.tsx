@@ -94,7 +94,7 @@ function DesktopSidebar({ role, pathname }: { role: 'admin' | 'teacher'; pathnam
                 {/* Footer */}
                 <div className="border-t pt-4">
                     <div className="text-xs text-muted-foreground">
-                        © 2025 EduCRM
+                        © 2026 EduCRM
                     </div>
                 </div>
             </div>
@@ -165,7 +165,7 @@ function MobileSidebar({ role, pathname, open, onOpenChange }: {
                     {/* Footer */}
                     <div className="border-t pt-4">
                         <div className="text-xs text-muted-foreground">
-                            © 2025 EduCRM
+                            © 2026 EduCRM
                         </div>
                     </div>
                 </div>

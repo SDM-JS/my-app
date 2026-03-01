@@ -292,13 +292,13 @@ export default function GroupsPage() {
                 // Update group
                 await updateGroup(selectedGroup.id, data);
                 toast.success("Group updated successfully!");
-                refetch();
+                await refetch();
                 closeDialog();
             } else if (viewMode === 'create') {
                 // Create new group
                 await createGroup(data);
                 toast.success("Group created successfully!");
-                refetch();
+                await refetch();
                 closeDialog();
             }
         } catch (error: any) {
@@ -345,7 +345,7 @@ export default function GroupsPage() {
             key: 'course',
             label: 'Course',
             sortable: true,
-            render: (value: string, item: any) => {
+            render: (value: string) => {
                 return value || <span className="text-muted-foreground">No course</span>;
             }
         },
@@ -353,7 +353,7 @@ export default function GroupsPage() {
             key: 'teacher',
             label: 'Teacher',
             sortable: true,
-            render: (value: string, item: any) => {
+            render: (value: string) => {
                 return value || <span className="text-muted-foreground">No teacher</span>;
             }
         },
