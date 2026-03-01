@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { clerkClient } from '@clerk/nextjs/server';
+import logger from '@/lib/logger';
 
 const ORGANIZATION_ID = process.env.CLERK_ORG_ID!;
 export async function GET() {
@@ -16,7 +17,7 @@ export async function GET() {
 
         return NextResponse.json(teachers);
     } catch (error) {
-        console.error('Error fetching teachers:', error);
+        logger.error(`Error fetching teachers: ${error}`);
         return NextResponse.json(
             { error: 'Failed to fetch teachers' },
             { status: 500 }
@@ -43,9 +44,9 @@ export async function POST(request: NextRequest) {
             const org = await client.organizations.getOrganization({
                 organizationId: ORGANIZATION_ID,
             });
-            console.log('Organization found:', org.name);
+            logger.info(`Organization found: ${org.name}`);
         } catch (orgError: any) {
-            console.error('Organization error:', orgError);
+            logger.error(`Error fetching organization: ${orgError}`);
             return NextResponse.json(
                 {
                     error: "Organization not found",
@@ -55,7 +56,7 @@ export async function POST(request: NextRequest) {
                 { status: 404 }
             );
         }
-        console.log(body)
+        logger.info(`Body data: ${JSON.stringify(body) }`);
         // 2️⃣ Create Clerk User
         const user = await client.users.createUser({
             emailAddress: [body.email],
@@ -64,7 +65,7 @@ export async function POST(request: NextRequest) {
 
 
 
-        console.log('User created:', user.id);
+        logger.info(`User created: ${user.id} with email ${body.email}`);
 
         // 3️⃣ Add user to Organization as TEACHER
         try {
@@ -73,9 +74,9 @@ export async function POST(request: NextRequest) {
                 userId: user.id,
                 role: "org:teacher", // Note: try with "org:" prefix
             });
-            console.log('Membership created:', membership);
+            logger.info(`Membership created for user ${user.id}`);
         } catch (membershipError: any) {
-            console.error('Membership error:', membershipError);
+            logger.error(`Membership error: ${membershipError}`);
 
             // If membership fails, delete the user to avoid orphaned accounts
             await client.users.deleteUser(user.id);
@@ -110,7 +111,7 @@ export async function POST(request: NextRequest) {
 
         return NextResponse.json(teacher, { status: 201 });
     } catch (error: any) {
-        console.error("Error creating teacher:", error);
+        logger.error(`Error creating teacher: ${error}`);
 
         return NextResponse.json(
             {

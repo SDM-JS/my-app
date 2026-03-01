@@ -11,8 +11,6 @@ export const metadata: Metadata = {
   description: 'Modern CRM dashboard for educational centers',
 };
 
-// const API_KEY = import.meta.env!.CLERK_PUBLISHABLE_KEY!
-
 export default function RootLayout({
   children,
 }: Readonly<{

@@ -1,11 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import logger from '@/lib/logger';
 
 export async function PUT(
     request: NextRequest,
     { params }: { params: Promise<{ id: string }> }
 ) {
-    // try {
+    try {
     const { id } = await params; // Await the params
     const body = await request.json();
 
@@ -28,13 +29,13 @@ export async function PUT(
     });
 
     return NextResponse.json(payment);
-    // } catch (error) {
-    //     console.error('Error updating group:', error);
-    //     return NextResponse.json(
-    //         { error: 'Failed to update group' },
-    //         { status: 500 }
-    //     );
-    // }
+    } catch (error) {
+        logger.error(`Error updating group: ${error}`);
+        return NextResponse.json(
+            { error: 'Failed to update group' },
+            { status: 500 }
+        );
+    }
 }
 
 export async function DELETE(
@@ -57,7 +58,7 @@ export async function DELETE(
 
         return NextResponse.json({ success: true });
     } catch (error: any) {
-        console.error('Error deleting group:', error);
+        logger.error(`Error deleting group: ${error}`);
 
         // Handle specific Prisma errors
         if (error.code === 'P2025') {

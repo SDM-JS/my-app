@@ -2,6 +2,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { redis } from '@/lib/redis';
+import logger from '@/lib/logger';
 
 const cacheKey = "groups:all"
 
@@ -47,7 +48,7 @@ export async function GET() {
 
         return NextResponse.json(groups);
     } catch (error) {
-        console.error('Error fetching groups:', error);
+        logger.error(`Error fetching groups: ${error}`);
         return NextResponse.json(
             { error: 'Failed to fetch groups' },
             { status: 500 }
@@ -107,7 +108,7 @@ export async function POST(request: NextRequest) {
 
         return NextResponse.json(group, { status: 201 });
     } catch (error: any) {
-        console.error('Error creating group:', error);
+        logger.error(`Error creating group: ${error}`);
 
         // Handle specific Prisma errors
         if (error.code === 'P2003') {

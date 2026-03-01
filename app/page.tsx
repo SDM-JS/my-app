@@ -102,7 +102,7 @@ export default function SignInPage() {
                             <SignIn.Step name="choose-strategy">
                                 <Card className="w-full sm:w-96">
                                     <CardHeader>
-                                        <CardTitle>Use another method</CardTitle>
+                                        <CardTitle>Change Email</CardTitle>
                                         <CardDescription>
                                             Facing issues? You can use any of these methods to sign in.
                                         </CardDescription>
@@ -176,7 +176,7 @@ export default function SignInPage() {
                                                 </SignIn.Action>
                                                 <SignIn.Action navigate="choose-strategy" asChild>
                                                     <Button type="button" size="sm" variant="link">
-                                                        Use another method
+                                                        Change your email address
                                                     </Button>
                                                 </SignIn.Action>
                                             </div>

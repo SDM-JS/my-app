@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import logger from '@/lib/logger';
 
 export async function PUT(
     request: NextRequest,
@@ -34,7 +35,7 @@ export async function PUT(
         });
         return NextResponse.json(student);
     } catch (error) {
-        console.error('Error updating student:', error);
+        logger.error(`Error updating student: ${error}`);
         return NextResponse.json(
             { error: 'Failed to update student' },
             { status: 500 }
@@ -66,7 +67,7 @@ export async function DELETE(
 
         return NextResponse.json({ success: true });
     } catch (error: any) {
-        console.error('Error deleting student:', error);
+        logger.error(`Error deleting student: ${error}`);
 
         // Handle specific Prisma errors
         if (error.code === 'P2025') {

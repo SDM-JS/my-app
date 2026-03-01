@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import logger from '@/lib/logger';
 
 export async function GET() {
     try {
@@ -19,7 +20,7 @@ export async function GET() {
         });
         return NextResponse.json(students);
     } catch (error) {
-        console.error('Error fetching students:', error);
+        logger.error(`Error fetching students: ${error}`);
         return NextResponse.json(
             { error: 'Failed to fetch students' },
             { status: 500 }
@@ -70,7 +71,7 @@ export async function POST(request: NextRequest) {
 
         return NextResponse.json(student, { status: 201 });
     } catch (error: any) {
-        console.error('Error creating student:', error);
+        logger.error(`Error creating student: ${error}`);
 
         // Handle foreign key constraint errors
         if (error.code === 'P2003') {

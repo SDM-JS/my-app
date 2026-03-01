@@ -1,4 +1,6 @@
+import logger from "@/lib/logger"
 import { prisma } from "@/lib/prisma"
+import { log } from "console"
 import { NextRequest, NextResponse } from "next/server"
 
 export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
@@ -22,8 +24,11 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
         })
         return NextResponse.json(source);
     } catch (error) {
-        console.log(error)
-        NextResponse.json(error)
+        logger.error(`Error updating cameFrom: ${error}`);
+        return NextResponse.json(
+            { error: 'Failed to update cameFrom' },
+            { status: 500 }
+        );
     }
 }
 
@@ -44,7 +49,7 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
         })
         return NextResponse.json({ message: "Source deleted successfully!" })
     } catch (error) {
-        console.log(error)
+        logger.error(`Error deleting cameFrom: ${error}`);
         return NextResponse.json(error)
     }
 }

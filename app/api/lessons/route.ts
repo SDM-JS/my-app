@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { DaysOfWeek } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
+import logger from '@/lib/logger';
 
 // GET all lessons or filtered by date range
 export async function GET(request: NextRequest) {
@@ -72,7 +73,7 @@ export async function GET(request: NextRequest) {
 
         return NextResponse.json(lessons);
     } catch (error) {
-        console.error('Error fetching lessons:', error);
+        logger.error(`Error fetching lessons: ${error}`);
         return NextResponse.json(
             { error: 'Failed to fetch lessons' },
             { status: 500 }
@@ -139,7 +140,7 @@ export async function POST(request: NextRequest) {
 
         return NextResponse.json(lesson, { status: 201 });
     } catch (error) {
-        console.error('Error creating lesson:', error);
+        logger.error(`Error creating lesson: ${error}`);
         return NextResponse.json(
             { error: 'Failed to create lesson' },
             { status: 500 }

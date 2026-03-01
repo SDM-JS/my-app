@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { clerkClient } from '@clerk/nextjs/server';
+import logger from '@/lib/logger';
 
 export async function PUT(
     request: NextRequest,
@@ -32,7 +33,7 @@ export async function PUT(
 
         return NextResponse.json(teacher);
     } catch (error) {
-        console.error('Error updating teacher:', error);
+        logger.error(`Error updating teacher: ${error}`);
         return NextResponse.json(
             { error: 'Failed to update teacher' },
             { status: 500 }
@@ -62,7 +63,7 @@ export async function DELETE(
 
         return NextResponse.json({ success: true });
     } catch (error: any) {
-        console.error('Error deleting teacher:', error);
+        logger.error(`Error deleting teacher: ${error}`);
 
         if (error.code === 'P2025') {
             return NextResponse.json(

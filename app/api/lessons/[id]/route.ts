@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { DaysOfWeek } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
+import logger from '@/lib/logger';
 
 // GET single lesson
 export async function GET(
@@ -32,7 +33,7 @@ export async function GET(
 
         return NextResponse.json(lesson);
     } catch (error) {
-        console.error('Error fetching lesson:', error);
+        logger.error(`Error fetching lesson: ${error}`);
         return NextResponse.json(
             { error: 'Failed to fetch lesson' },
             { status: 500 }
@@ -99,7 +100,7 @@ export async function PUT(
 
         return NextResponse.json(lesson);
     } catch (error) {
-        console.error('Error updating lesson:', error);
+        logger.error(`Error updating lesson: ${error}`);
         return NextResponse.json(
             { error: 'Failed to update lesson' },
             { status: 500 }
@@ -138,7 +139,7 @@ export async function DELETE(
             { status: 200 }
         );
     } catch (error) {
-        console.error('Error deleting lesson:', error);
+        logger.error(`Error deleting lesson: ${error}`);
         return NextResponse.json(
             { error: 'Failed to delete lesson' },
             { status: 500 }

@@ -1,6 +1,7 @@
 // app/api/attendances/[id]/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import logger from '@/lib/logger';
 
 export async function GET(
     request: NextRequest,
@@ -25,7 +26,7 @@ export async function GET(
 
         return NextResponse.json(attendance);
     } catch (error) {
-        console.error('Error fetching attendance:', error);
+        logger.error(`Error fetching attendance: ${error}`,);
         return NextResponse.json(
             { error: 'Failed to fetch attendance' },
             { status: 500 }
@@ -78,7 +79,7 @@ export async function PUT(
 
         return NextResponse.json(attendance);
     } catch (error: any) {
-        console.error('Error updating attendance:', error);
+        logger.error(`Error updating attendance: ${error}`);
 
         if (error.code === 'P2003') {
             return NextResponse.json(
@@ -129,7 +130,7 @@ export async function DELETE(
             { status: 200 }
         );
     } catch (error: any) {
-        console.error('Error deleting attendance:', error);
+        logger.error(`Error deleting attendance: ${error}`);
 
         if (error.code === 'P2025') {
             return NextResponse.json(
