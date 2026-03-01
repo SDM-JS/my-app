@@ -259,9 +259,9 @@ export default function StatisticsClient({
             const sheets = workbook.SheetNames;
             sheets.forEach(sheetName => {
                 const sheet = workbook.Sheets[sheetName];
-                const maxWidths = {};
-                XLSX.utils.sheet_to_json(sheet, { header: 1 }).forEach(row => {
-                    row.forEach((cell: any, colIndex: any) => {
+                const maxWidths: { [key: string]: number } = {};
+                XLSX.utils.sheet_to_json(sheet, { header: 1 }).forEach((row: any) => {
+                    (row as any[]).forEach((cell: any, colIndex: any) => {
                         const cellLength = String(cell).length;
                         maxWidths[colIndex] = Math.max(maxWidths[colIndex] || 0, cellLength);
                     });

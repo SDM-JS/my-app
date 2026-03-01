@@ -1,0 +1,4 @@
+{"level":"info","message":"Organization found: crm-main","timestamp":"2026-03-01T02:25:48.273Z"}
+{"level":"info","message":"Body data: {\"name\":\"AVS \",\"phone\":\"+992 0981090616\",\"email\":\"admw5@gmail.com\",\"birthday\":\"2222-03-23T00:00:00.000Z\",\"subjectIds\":[\"2WXjIBlZAI3SJlBsz6rUa\"],\"avatarUrl\":\"\",\"password\":\"admin1234!\"}","timestamp":"2026-03-01T02:25:48.279Z"}
+{"level":"info","message":"User created: user_3AKCbnDHBQwURUjeSbtmauylXyR with email admw5@gmail.com","timestamp":"2026-03-01T02:25:48.908Z"}
+{"level":"info","message":"Membership created for user user_3AKCbnDHBQwURUjeSbtmauylXyR","timestamp":"2026-03-01T02:25:49.242Z"}

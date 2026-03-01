@@ -58,7 +58,6 @@ const transformCoursesForTable = (courses: CourseWithRelations[]) => {
         subject: course.subject?.name || 'No subject',
         teachersCount: course.teacher?.length || 0,
         studentsCount: course.students?.length || 0,
-        // Keep the original objects for render functions
         _subject: course.subject,
         _teacher: course.teacher,
         _students: course.students,
