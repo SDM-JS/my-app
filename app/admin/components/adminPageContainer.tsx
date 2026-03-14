@@ -8,7 +8,6 @@ import { useRouter } from 'next/navigation';
 import { useEffect, useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { addDays, format } from 'date-fns';
-import { toast } from 'sonner';
 import { axiosClient } from '@/lib/axiosClient';
 import DataTable from '@/app/components/DataTable';
 import { Loader2 } from 'lucide-react';
@@ -36,7 +35,7 @@ export default function AdminPageContainer({
     const [selectedDate, setSelectedDate] = useState<Date>(new Date());
 
     const router = useRouter();
-    const { orgRole, isLoaded } = useAuth();
+    // const { orgRole, isLoaded } = useAuth();
 
     // Get target date (if Sunday, show Monday)
     const getTargetDate = () => {
@@ -64,7 +63,8 @@ export default function AdminPageContainer({
             });
             return data;
         },
-        enabled: isLoaded && orgRole === "org:admin",
+        // TODO: Use internet connection to check user role
+        // enabled: isLoaded && orgRole === "org:admin",
     });
 
     // Get day name for display
@@ -226,28 +226,29 @@ export default function AdminPageContainer({
     }, [lessonsData]);
 
     // Use useEffect for navigation logic
-    useEffect(() => {
-        if (isLoaded && orgRole !== "org:admin") {
-            router.push("/");
-        }
-    }, [orgRole, isLoaded, router]);
+    // TODO: Use internet connection to check user role
+    // useEffect(() => {
+    //     if (isLoaded && orgRole !== "org:admin") {
+    //         router.push("/");
+    //     }
+    // }, [orgRole, isLoaded, router]);
 
-    // Show loading state while auth is loading
-    if (!isLoaded) {
-        return (
-            <div className="flex items-center justify-center h-64">
-                <div className="text-center">
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
-                    <p className="mt-2 text-muted-foreground">Loading...</p>
-                </div>
-            </div>
-        );
-    }
+    // // Show loading state while auth is loading
+    // if (!isLoaded) {
+    //     return (
+    //         <div className="flex items-center justify-center h-64">
+    //             <div className="text-center">
+    //                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
+    //                 <p className="mt-2 text-muted-foreground">Loading...</p>
+    //             </div>
+    //         </div>
+    //     );
+    // }
 
-    // If not admin (after useEffect will redirect), show nothing
-    if (orgRole !== "org:admin") {
-        return null;
-    }
+    // // If not admin (after useEffect will redirect), show nothing
+    // if (orgRole !== "org:admin") {
+    //     return null;
+    // }
 
     return (
         <div className="space-y-6">

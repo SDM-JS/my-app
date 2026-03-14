@@ -17,7 +17,6 @@ import { axiosClient } from '@/lib/axiosClient';
 import { Teacher, Subject } from '@prisma/client';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { useUser } from '@clerk/nextjs';
 import { noAvatarURL } from '@/lib/constants';
 
 const teacherSchema = z.object({

@@ -116,8 +116,6 @@ export default function LessonsPage() {
         },
     });
 
-    console.log(lessonsData)
-
     const {
         register,
         handleSubmit,

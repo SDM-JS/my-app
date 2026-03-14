@@ -287,11 +287,11 @@ export default function CoursesPage() {
             )
         },
         {
-            key: 'price',
+            key: '_raw',
             label: 'Price',
             sortable: true,
-            render: (value: string) => (
-                <span className="font-medium">{value}</span>
+            render: (value:{price:string}) => (
+                <span className="font-medium">{value.price}</span>
             )
         },
         {

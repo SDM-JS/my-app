@@ -13,7 +13,6 @@ import {
     UsersRound,
     Settings,
     Menu,
-    X,
     Layers,
     BarChartBig,
 } from 'lucide-react';

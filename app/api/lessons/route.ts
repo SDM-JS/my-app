@@ -82,8 +82,6 @@ export async function GET(request: NextRequest) {
         await prisma.$disconnect();
     }
 }
-
-// POST create new lesson
 export async function POST(request: NextRequest) {
     try {
         const body = await request.json();

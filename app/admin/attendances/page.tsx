@@ -252,13 +252,13 @@ export default function AttendancesPage() {
                 // Update attendance
                 await updateAttendance(selectedAttendance.id, data);
                 toast.success("Attendance updated successfully!");
-                refetch();
+                await refetch();
                 closeDialog();
             } else if (viewMode === 'create') {
                 // Create new attendance
                 await createAttendance(data);
                 toast.success("Attendance created successfully!");
-                refetch();
+                await refetch();
                 closeDialog();
             }
         } catch (error: any) {

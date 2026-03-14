@@ -1,17 +1,8 @@
 
 import DataTable from '@/app/components/DataTable';
-import { mockLessons, testTeacherId } from '@/app/data/mockData';
-import { Lessons } from '@prisma/client';
+import { mockLessons } from '@/app/data/mockData';
 
-export default function TeacherLessonsPage({ lessons }: {
-    lessons: Lessons & {
-        group: {
-            course: {
-                name: string
-            } | null
-        } | null
-    }[]
-}) {
+export default function TeacherLessonsPage({ lessons }: any) {
 
     const myLessons = mockLessons.filter((l) => l.teacher === 'Dr. Robert Chen');
 

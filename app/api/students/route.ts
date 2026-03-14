@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import logger from '@/lib/logger';
+import { Prisma } from '@prisma/client';
 
 export async function GET() {
     try {
@@ -44,7 +45,9 @@ export async function POST(request: NextRequest) {
             name: body.name,
             phone: body.phone,
             birthday: new Date(body.birthday),
-            cameText: body.cameFrom,
+            cameFrom: {
+                connect:{id: body.cameFrom}
+            }
         };
 
         // Only connect course if provided

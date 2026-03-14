@@ -12,6 +12,7 @@ import {
     ArrowUpDown,
     PackageX,
 } from 'lucide-react';
+import React from "react";
 
 export interface Column<T> {
     key: string;

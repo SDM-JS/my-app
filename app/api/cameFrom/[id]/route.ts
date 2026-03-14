@@ -1,6 +1,5 @@
 import logger from "@/lib/logger"
 import { prisma } from "@/lib/prisma"
-import { log } from "console"
 import { NextRequest, NextResponse } from "next/server"
 
 export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {

@@ -12,15 +12,17 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import DataTable, { Column } from '@/app/components/DataTable';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { axiosClient } from '@/lib/axiosClient';
-import { sourceSchema, validSchema } from '@/lib/validation';
+import { itemSchema, sourceSchema, validSchema } from '@/lib/validation';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { cameFrom } from '@prisma/client';
 import { toast } from 'sonner';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 
 type formData = z.infer<typeof validSchema>
 type sourceFormData = z.infer<typeof sourceSchema>
+
+type itemFormData = z.infer<typeof itemSchema>
 
 export default function SettingsPage() {
     const queryClient = useQueryClient();
@@ -48,6 +50,10 @@ export default function SettingsPage() {
         resolver: zodResolver(validSchema),
     });
 
+    const itemInfo = useForm<itemFormData>({
+        resolver: zodResolver(itemSchema)
+    })
+
     const sourceForm = useForm<sourceFormData>({
         resolver: zodResolver(sourceSchema),
         defaultValues: {
@@ -59,6 +65,13 @@ export default function SettingsPage() {
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
     const [selectedSource, setSelectedSource] = useState<cameFrom | null>(null)
+
+    const [itemsCount, setItemsCount] = useState<string | null>(null)
+
+    useEffect(() => {
+        const data = localStorage.getItem("itemsPerPage")
+        setItemsCount(data)
+    }, [])
 
     // Create mutation
     const createSource = useMutation({
@@ -166,6 +179,11 @@ export default function SettingsPage() {
     const onSubmit = (data: formData) => {
         console.log(data)
         userInfo.reset()
+    }
+
+    const onSubmitItemCount = (data: itemFormData) => {
+        console.log(data)
+        itemInfo.reset()
     }
 
     const columns: Column<Record<string, any>>[] = [{
@@ -309,6 +327,26 @@ export default function SettingsPage() {
                                 <Save className="h-4 w-4" />
                                 Save Changes
                             </Button>
+                        </form>
+                    </CardContent>
+                </Card>
+
+                <Card>
+                    <CardHeader>
+                        <CardTitle className="flex items-center gap-2">
+                            Items per page
+                        </CardTitle>
+                        <CardDescription>Configure how much items you want to see in tables</CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                        <form className="grid gap-4 md:grid-cols-2" onSubmit={userInfo.handleSubmit(onSubmit)}>
+                            <div className="space-y-2">
+                                <Label htmlFor="name">Count</Label>
+                                <Input id="name" {...itemInfo.register("count")} />
+                                {itemInfo.formState.errors.count && (
+                                    <p className="text-xs text-destructive">{itemInfo.formState.errors.count.message}</p>
+                                )}
+                            </div>
                         </form>
                     </CardContent>
                 </Card>

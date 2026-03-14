@@ -19,7 +19,7 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body suppressHydrationWarning>
-         <ClerkProvider signInUrl='/' signInForceRedirectUrl={"/"}>
+         {/* <ClerkProvider signInUrl='/' signInForceRedirectUrl={"/"}> */}
 
         <QueryClientPro>
           <ThemeProvider
@@ -33,7 +33,7 @@ export default function RootLayout({
           </ThemeProvider>
         </QueryClientPro>
 
-         </ClerkProvider>
+         {/* </ClerkProvider> */}
       </body>
     </html >
   );
