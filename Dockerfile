@@ -6,8 +6,8 @@ COPY . .
 
 EXPOSE 3000
 
-USER admin
+# Install dependencies
+RUN corepack enable && corepack prepare pnpm@latest --activate && pnpm install
 
-CMD [ "pnpm build" ]
-
-RUN pnpm dev
+# Default to running the development server
+CMD ["pnpm", "dev"]

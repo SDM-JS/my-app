@@ -54,7 +54,7 @@ const transformCoursesForTable = (courses: CourseWithRelations[]) => {
         id: course.id,
         name: course.name,
         desc: course.desc,
-        price: `$${course}`,
+        price: course.price,
         subject: course.subject?.name || 'No subject',
         teachersCount: course.teacher?.length || 0,
         studentsCount: course.students?.length || 0,
@@ -287,11 +287,11 @@ export default function CoursesPage() {
             )
         },
         {
-            key: '_raw',
+            key: 'price',
             label: 'Price',
             sortable: true,
-            render: (value:{price:string}) => (
-                <span className="font-medium">{value.price}</span>
+            render: (value: string) => (
+                <span className="font-medium">{value}</span>
             )
         },
         {

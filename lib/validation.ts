@@ -11,5 +11,5 @@ export const sourceSchema = z.object({
 })
 
 export const itemSchema = z.object({
-    count: z.number({ error: "Items per page is required!" })
+    count: z.coerce.number({ error: "Items per page is required!" })
 })

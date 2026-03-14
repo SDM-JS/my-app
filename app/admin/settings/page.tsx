@@ -339,10 +339,10 @@ export default function SettingsPage() {
                         <CardDescription>Configure how much items you want to see in tables</CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-4">
-                        <form className="grid gap-4 md:grid-cols-2" onSubmit={userInfo.handleSubmit(onSubmit)}>
+                        <form className="grid gap-4 md:grid-cols-2" onSubmit={itemInfo.handleSubmit(onSubmitItemCount)}>
                             <div className="space-y-2">
-                                <Label htmlFor="name">Count</Label>
-                                <Input id="name" {...itemInfo.register("count")} />
+                                <Label htmlFor="items-per-page-count">Count</Label>
+                                <Input id="items-per-page-count" {...itemInfo.register("count")} />
                                 {itemInfo.formState.errors.count && (
                                     <p className="text-xs text-destructive">{itemInfo.formState.errors.count.message}</p>
                                 )}
