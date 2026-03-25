@@ -42,15 +42,7 @@ export class PrismaTransport extends Transport {
         data: {
           level,
           message,
-          timestamp: new Date(timestamp),
-          userId,
-          userRole,
-          entity,
-          entityId,
-          action,
-          ip,
-          userAgent,
-          meta: Object.keys(restMeta).length > 0 ? restMeta : undefined,
+          type:"error"
         },
       });
     } catch (error) {

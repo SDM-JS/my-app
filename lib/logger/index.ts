@@ -28,6 +28,7 @@ class DatabaseTransport extends Transport {
       // Save to database
       await prisma.log.create({
         data: {
+          level,
           message: message,
           type: level,
         },

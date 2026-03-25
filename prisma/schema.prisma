@@ -28,6 +28,7 @@ model Student {
 model Log {
     id        String   @id @default(nanoid())
     message   String   @db.Text
+    level     String
     type      String // error, info, warn, debug, etc.
     createdAt DateTime @default(now())
     updatedAt DateTime @updatedAt
