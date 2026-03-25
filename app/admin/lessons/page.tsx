@@ -21,7 +21,8 @@ import { toast } from 'sonner';
 import { Textarea } from '@/components/ui/textarea';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { axiosClient } from '@/lib/axiosClient';
-import { Lessons, Groups, Teacher, DaysOfWeek } from '@prisma/client';
+import type { Lessons, Groups, Teacher } from '@prisma/client';
+import { DaysOfWeek } from '@prisma/client';
 import { Loader2 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -201,14 +202,14 @@ export default function LessonsPage() {
         setViewMode(mode);
         if (lesson) {
             setSelectedLesson(lesson);
-            setSelectedDays(lesson.daysOfWeek);
+            setSelectedDays(lesson.daysOfWeek as unknown as DaysOfWeek[]);
             setValue('groupId', lesson.groupId || '');
             setValue('teacherId', lesson.teacherId || '');
             setValue('startTime', format(lesson.startTime, "yyyy-MM-dd'T'HH:mm"));
             setValue('endTime', format(lesson.endTime, "yyyy-MM-dd'T'HH:mm"));
             setValue('room', lesson.room);
             setValue('desc', lesson.desc || '');
-            setValue('daysOfWeek', lesson.daysOfWeek);
+            setValue('daysOfWeek', lesson.daysOfWeek as unknown as DaysOfWeek[]);
         } else {
             setSelectedDays([]);
             reset({

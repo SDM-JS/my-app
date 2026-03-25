@@ -30,7 +30,7 @@ export async function PUT(
         const clerkUpdate: { password?: string; firstName?: string; lastName?: string } = {};
         const nameParts = body.name.trim().split(/\s+/);
         clerkUpdate.firstName = nameParts[0] ?? body.name;
-        clerkUpdate.lastName = nameParts.slice(1).join(' ') || nameParts[0] ?? '';
+        clerkUpdate.lastName = nameParts.slice(1).join(' ') || (nameParts[0] ?? '');
         if (body.password != null && String(body.password).length >= 8) {
             clerkUpdate.password = body.password;
         }
