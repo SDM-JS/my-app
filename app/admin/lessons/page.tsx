@@ -273,7 +273,7 @@ export default function LessonsPage() {
             [DaysOfWeek.Friday]: 'bg-orange-500 hover:bg-orange-600',
             [DaysOfWeek.Saturday]: 'bg-red-500 hover:bg-red-600',
         };
-        return colors[day] || 'bg-gray-500';
+        return colors[day] || 'bg-muted';
     };
 
     const columns = [

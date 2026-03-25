@@ -1,10 +1,17 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
+import {
+    ImageKitAbortError,
+    ImageKitInvalidRequestError,
+    ImageKitServerError,
+    ImageKitUploadNetworkError,
+    upload,
+} from '@imagekit/next';
 import DataTable from '@/app/components/DataTable';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Plus, Pencil, Trash2, Eye, Star, User,  X } from 'lucide-react';
+import { Plus, Pencil, Trash2, Eye, Star, User, X, Upload, Loader2 } from 'lucide-react';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
@@ -66,6 +73,10 @@ export default function TeachersPage() {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
     const [avatarUrl, setAvatarUrl] = useState<string>('');
+    const [avatarFileId, setAvatarFileId] = useState<string | null>(null);
+    const [uploadProgress, setUploadProgress] = useState(0);
+    const [isUploading, setIsUploading] = useState(false);
+    const avatarFileInputRef = useRef<HTMLInputElement>(null);
 
     useEffect(() => {
         if (teachersData) {
@@ -101,6 +112,7 @@ export default function TeachersPage() {
             setValue('email', teacher.email);
             setValue('avatarUrl', teacher.avatarUrl || '');
             setAvatarUrl(teacher.avatarUrl || '');
+            setAvatarFileId((teacher as { avatarFileId?: string | null }).avatarFileId ?? null);
 
             // Only set password for create mode, not for edit/view
             if (mode === 'create') {
@@ -117,6 +129,7 @@ export default function TeachersPage() {
             setValue('subjectIds', teacher.subjects?.map(subject => subject.id) || []);
         } else {
             setAvatarUrl('');
+            setAvatarFileId(null);
             reset({
                 name: '',
                 phone: '',
@@ -139,6 +152,7 @@ export default function TeachersPage() {
         setIsDialogOpen(false);
         setSelectedTeacher(null);
         setAvatarUrl('');
+        setAvatarFileId(null);
         reset();
     };
 
@@ -156,7 +170,8 @@ export default function TeachersPage() {
                 email: data.email,
                 birthday: new Date(data.birthday),
                 subjectIds: data.subjectIds,
-                avatarUrl: avatarUrl || data.avatarUrl,
+                avatarUrl: avatarUrl || data.avatarUrl || '',
+                avatarFileId: avatarFileId ?? undefined,
                 password: data.password
             });
             return response.data;
@@ -174,7 +189,8 @@ export default function TeachersPage() {
                 email: data.email,
                 birthday: new Date(data.birthday),
                 subjectIds: data.subjectIds,
-                avatarUrl: avatarUrl || data.avatarUrl,
+                avatarUrl: avatarUrl !== '' ? avatarUrl : (currentAvatarUrl || ''),
+                avatarFileId: avatarFileId ?? undefined,
             });
             return response.data;
         } catch (error: any) {
@@ -216,12 +232,12 @@ export default function TeachersPage() {
         mutationFn: async () => {
             await axiosClient.delete(`/api/teachers/${selectedTeacher?.id}`);
         },
-        onSuccess: () => {
-            // Update local state
+        onSuccess: async () => {
             setTeachers(teachers.filter((t) => t.id !== selectedTeacher?.id));
             toast.success("Teacher deleted successfully!");
             closeDeleteDialog();
-        }
+            await refetch();
+        },
     })
 
     const handleSubjectChange = (subjectId: string) => {
@@ -234,7 +250,78 @@ export default function TeachersPage() {
 
     const removeAvatar = () => {
         setAvatarUrl('');
+        setAvatarFileId(null);
         setValue('avatarUrl', '');
+    };
+
+    const uploadAuthenticator = async () => {
+        const response = await fetch('/api/upload-auth');
+        if (!response.ok) {
+            const errorText = await response.text();
+            throw new Error(`Upload auth failed: ${response.status} ${errorText}`);
+        }
+        const data = await response.json();
+        const { signature, expire, token, publicKey } = data;
+        return { signature, expire, token, publicKey };
+    };
+
+    const handleAvatarUpload = async () => {
+        const fileInput = avatarFileInputRef.current;
+        if (!fileInput?.files?.length) {
+            fileInput?.click();
+            return;
+        }
+        const file = fileInput.files[0];
+        const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+        if (!allowedTypes.includes(file.type)) {
+            toast.error('Please select an image (JPEG, PNG, WebP, or GIF)');
+            return;
+        }
+        if (file.size > 5 * 1024 * 1024) {
+            toast.error('Image must be under 5MB');
+            return;
+        }
+        setIsUploading(true);
+        setUploadProgress(0);
+        try {
+            const { signature, expire, token, publicKey } = await uploadAuthenticator();
+            const uploadResponse = await upload({
+                expire,
+                token,
+                signature,
+                publicKey,
+                file,
+                fileName: `teachers/${Date.now()}-${file.name.replace(/\s+/g, '-')}`,
+                responseFields: ['fileId', 'url'],
+                onProgress: (event) => setUploadProgress((event.loaded / event.total) * 100),
+            });
+            const res = uploadResponse as { url?: string; fileId?: string };
+            const url = res.url;
+            if (url) {
+                setAvatarUrl(url);
+                if (res.fileId) setAvatarFileId(res.fileId);
+                setValue('avatarUrl', url, { shouldValidate: true });
+                toast.success('Profile photo uploaded');
+            } else {
+                toast.error('Upload succeeded but no URL returned');
+            }
+        } catch (error) {
+            if (error instanceof ImageKitAbortError) {
+                toast.error('Upload cancelled');
+            } else if (error instanceof ImageKitInvalidRequestError) {
+                toast.error(error.message);
+            } else if (error instanceof ImageKitUploadNetworkError) {
+                toast.error('Network error. Please try again.');
+            } else if (error instanceof ImageKitServerError) {
+                toast.error('Server error. Please try again.');
+            } else {
+                toast.error('Failed to upload image');
+            }
+        } finally {
+            setIsUploading(false);
+            setUploadProgress(0);
+            fileInput.value = '';
+        }
     };
 
     const columns = [
@@ -419,9 +506,18 @@ export default function TeachersPage() {
                         <form onSubmit={handleSubmit(onSubmit)} className="space-y-6 px-6 pb-6">
                             {/* Avatar Section */}
                             <div className="flex flex-col items-center gap-4">
+                                <input
+                                    type="file"
+                                    ref={avatarFileInputRef}
+                                    accept="image/jpeg,image/png,image/webp,image/gif"
+                                    className="hidden"
+                                    onChange={handleAvatarUpload}
+                                />
                                 <div className="relative">
                                     <Avatar className="h-24 w-24 border-4 border-background shadow-lg">
-                                        <AvatarImage src={avatarUrl || currentAvatarUrl} />
+                                        {(avatarUrl || currentAvatarUrl) ? (
+                                            <AvatarImage src={avatarUrl || currentAvatarUrl} />
+                                        ) : null}
                                         <AvatarFallback className="text-2xl bg-primary/10">
                                             <User className="h-12 w-12" />
                                         </AvatarFallback>
@@ -436,6 +532,38 @@ export default function TeachersPage() {
                                         </button>
                                     )}
                                 </div>
+                                {viewMode !== 'view' && (
+                                    <div className="flex flex-col items-center gap-2">
+                                        <Button
+                                            type="button"
+                                            variant="outline"
+                                            size="sm"
+                                            onClick={() => avatarFileInputRef.current?.click()}
+                                            disabled={isUploading}
+                                            className="gap-2"
+                                        >
+                                            {isUploading ? (
+                                                <>
+                                                    <Loader2 className="h-4 w-4 animate-spin" />
+                                                    Uploading... {Math.round(uploadProgress)}%
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <Upload className="h-4 w-4" />
+                                                    {avatarUrl || currentAvatarUrl ? 'Change photo' : 'Upload photo'}
+                                                </>
+                                            )}
+                                        </Button>
+                                        {isUploading && (
+                                            <div className="w-32 h-1.5 bg-muted rounded-full overflow-hidden">
+                                                <div
+                                                    className="h-full bg-primary transition-all duration-300"
+                                                    style={{ width: `${uploadProgress}%` }}
+                                                />
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
                             </div>
 
                             {/* Form Grid */}

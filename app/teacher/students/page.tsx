@@ -57,21 +57,21 @@ const StudentsPage = async () => {
             ? student.attendances[0].date // Already sorted desc, so first is latest
             : null;
 
-        // Calculate progress (simplified: based on days elapsed vs total days)
+        // Calculate progress: use group createdAt as start, estimate end from lessons or default range
         const now = new Date();
-        const groupStart = new Date(student.group?.lessons || '');
-        const groupEnd = new Date(student?.group?.to || '');
+        const groupStart = student.group?.createdAt ? new Date(student.group.createdAt) : now;
         const groupStartTime = groupStart.getTime();
-        const groupEndTime = groupEnd.getTime();
         const nowTime = now.getTime();
-
-        // Total course duration in days
+        // If group has lessons with dates, use latest lesson end as "end"; else use 1 year from start
+        const lessons = student.group?.lessons ?? [];
+        const endFromLessons = Array.isArray(lessons) && lessons.length > 0
+            ? lessons.map((l: { endTime?: string | Date }) => l.endTime ? new Date(l.endTime).getTime() : 0).filter(Boolean)
+            : [];
+        const groupEndTime = endFromLessons.length > 0
+            ? Math.max(...endFromLessons)
+            : groupStartTime + 365 * 24 * 60 * 60 * 1000;
         const totalDays = Math.max(1, Math.floor((groupEndTime - groupStartTime) / (1000 * 60 * 60 * 24)));
-
-        // Days elapsed from start
         const daysElapsed = Math.max(0, Math.floor((nowTime - groupStartTime) / (1000 * 60 * 60 * 24)));
-
-        // Calculate progress percentage
         const progress = Math.min(100, Math.round((daysElapsed / totalDays) * 100));
 
         // Calculate total paid amount

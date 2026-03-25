@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import logger from '@/lib/logger';
+import { Prisma } from '@prisma/client';
 
 export async function PUT(
     request: NextRequest,
@@ -10,24 +11,35 @@ export async function PUT(
         const { id } = await params; // Await the params
         const body = await request.json();
 
+        const birthday = new Date(body.birthday);
+        if (isNaN(birthday.getTime())) {
+            return NextResponse.json(
+                { error: 'Invalid birthday date' },
+                { status: 400 }
+            );
+        }
+
+        const updateData: Prisma.StudentUpdateInput = {
+            name: body.name,
+            phone: body.phone,
+            birthday,
+        };
+        if (body.courseId) {
+            updateData.courses = { set: [{ id: body.courseId }] };
+        }
+        if (body.groupId) {
+            updateData.group = { connect: { id: body.groupId } };
+        } else {
+            updateData.group = { disconnect: true };
+        }
+        const cameFromId = body.cameFromId ?? body.cameFrom;
+        if (cameFromId) {
+            updateData.cameFrom = { connect: { id: cameFromId } };
+        }
+
         const student = await prisma.student.update({
             where: { id },
-            data: {
-                name: body.name,
-                phone: body.phone,
-                birthday: new Date(body.birthday),
-                ...(body.courseId && {
-                    courses: {
-                        connect: { id: body.courseId }
-                    }
-                }),
-                ...(body.groupId && {
-                    group: {
-                        connect: { id: body.groupId }
-                    }
-                }),
-                cameText: body.cameText,
-            },
+            data: updateData,
             include: {
                 courses: true,
                 group: true,

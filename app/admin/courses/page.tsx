@@ -540,10 +540,10 @@ export default function CoursesPage() {
                                                         <div className="flex items-center gap-3 w-full">
                                                             <div className={`flex h-6 w-6 items-center justify-center rounded border ${selectedTeachers.some(t => t.id === teacher.id)
                                                                 ? 'bg-primary border-primary'
-                                                                : 'border-gray-300'
+                                                                : 'border-border'
                                                                 }`}>
                                                                 {selectedTeachers.some(t => t.id === teacher.id) && (
-                                                                    <div className="h-2 w-2 rounded-full bg-white" />
+                                                                    <div className="h-2 w-2 rounded-full bg-primary-foreground" />
                                                                 )}
                                                             </div>
                                                             <div className="flex flex-col items-start flex-1">

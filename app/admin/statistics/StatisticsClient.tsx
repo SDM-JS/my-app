@@ -716,7 +716,7 @@ export default function StatisticsClient({
                                                             key={i}
                                                             className={`w-3 h-3 rounded-full ${i < Math.floor(teacher.rating)
                                                                 ? 'bg-yellow-500'
-                                                                : 'bg-gray-200'
+                                                                : 'bg-muted'
                                                                 }`}
                                                         />
                                                     ))}
@@ -985,7 +985,7 @@ export default function StatisticsClient({
                                                                     key={i}
                                                                     className={`w-3 h-3 rounded-full ${i < Math.floor(teacher.rating)
                                                                         ? 'bg-yellow-500'
-                                                                        : 'bg-gray-200'
+                                                                        : 'bg-muted'
                                                                         }`}
                                                                 />
                                                             ))}
@@ -1039,7 +1039,7 @@ export default function StatisticsClient({
                             <DollarSign className="h-8 w-8 text-green-500" />
                         </div>
                         <div className="mt-4">
-                            <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
+                            <div className="h-2 bg-muted rounded-full overflow-hidden">
                                 <div
                                     className="h-full bg-green-500 rounded-full"
                                     style={{ width: `${Math.min(dashboardStats.totalRevenue / 10000 * 100, 100)}%` }}
@@ -1062,7 +1062,7 @@ export default function StatisticsClient({
                             <TrendingUp className="h-8 w-8 text-blue-500" />
                         </div>
                         <div className="mt-4">
-                            <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
+                            <div className="h-2 bg-muted rounded-full overflow-hidden">
                                 <div
                                     className="h-full bg-blue-500 rounded-full"
                                     style={{ width: `${Math.min(dashboardStats.newStudentsThisMonth / 50 * 100, 100)}%` }}
@@ -1085,7 +1085,7 @@ export default function StatisticsClient({
                             <CheckCircle className="h-8 w-8 text-orange-500" />
                         </div>
                         <div className="mt-4">
-                            <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
+                            <div className="h-2 bg-muted rounded-full overflow-hidden">
                                 <div
                                     className="h-full bg-orange-500 rounded-full"
                                     style={{ width: `${dashboardStats.attendanceRate}%` }}

@@ -56,11 +56,13 @@ export async function POST(request: NextRequest) {
                 { status: 404 }
             );
         }
-        logger.info(`Body data: ${JSON.stringify(body) }`);
+        logger.info(`Body data: ${JSON.stringify(body)}`);
         // 2️⃣ Create Clerk User
         const user = await client.users.createUser({
             emailAddress: [body.email],
             password: body.password,
+            firstName: body.name.split(" ")[0],
+            lastName: body.name.split(" ")[1]
         });
 
 

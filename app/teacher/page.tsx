@@ -20,9 +20,13 @@ export default async function TeacherDashboard() {
             lessons: {
                 where: {
                     startTime: {
-                        equals: new Date()
+                        gte: new Date(new Date().setHours(0, 0, 0, 0)),
+                        lte: new Date(new Date().setHours(23, 59, 59, 999))
                     },
                 },
+                include: {
+                    group: { include: { course: true } }
+                }
             },
             attendances: {
                 include: {
@@ -111,8 +115,8 @@ export default async function TeacherDashboard() {
                                 className="flex items-center justify-between rounded-lg border p-4 transition-smooth hover:bg-muted/50"
                             >
                                 <div className="space-y-1">
-                                    <p className="font-medium">{currentTeacher.group.map(g => g.course?.name)}</p>
-                                    <p className="text-sm text-muted-foreground">{currentTeacher.group.map(g => g.course?.desc)}</p>
+                                    <p className="font-medium">{lesson.group?.course?.name}</p>
+                                    <p className="text-sm text-muted-foreground">{lesson.group?.course?.desc}</p>
                                 </div>
                                 <div className="text-right space-y-1">
                                     <p className="text-sm font-medium">{format(lesson.startTime, "P")}</p>

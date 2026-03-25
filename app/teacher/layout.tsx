@@ -4,7 +4,7 @@ import React from "react";
 import { requireRole } from '@/lib/auth';
 
 export default async function TeacherLayout({ children }: { children: React.ReactNode }) {
-// requireRole("teacher")
+    await requireRole("teacher")
     return (
         <div className="min-h-screen bg-background">
             <Sidebar role="teacher" />
@@ -12,7 +12,7 @@ export default async function TeacherLayout({ children }: { children: React.Reac
             <div className="lg:ml-64">
                 {/* Show main Header only on desktop */}
                 <div className="hidden lg:block">
-                    {/* <Header /> */}
+                    <Header />
                 </div>
                 {/* Mobile spacer - replaces the need for mobile header in Sidebar */}
                 <div className="h-16 lg:hidden" />

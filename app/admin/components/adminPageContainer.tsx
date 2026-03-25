@@ -169,7 +169,7 @@ export default function AdminPageContainer({
                     return (
                         <Badge className="bg-green-500 hover:bg-green-600">
                             <span className="flex items-center gap-1">
-                                <div className="h-2 w-2 rounded-full bg-white animate-pulse" />
+                                <div className="h-2 w-2 rounded-full bg-primary-foreground animate-pulse" />
                                 Ongoing
                             </span>
                         </Badge>

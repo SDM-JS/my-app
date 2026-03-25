@@ -1,9 +1,9 @@
 {
   "mcpServers": {
     "next-devtools": {
-      "command": "npx",
+      "command": "pnpm",
       "args": [
-        "-y",
+        "dlx",
         "next-devtools-mcp@latest"
       ]
     }

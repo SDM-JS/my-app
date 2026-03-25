@@ -4,7 +4,7 @@ import React from "react";
 import { requireRole } from '@/lib/auth';
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
-    // requireRole("admin")
+    await requireRole("admin")
     return (
         <div className="min-h-screen bg-background">
             <Sidebar role="admin" />
@@ -12,7 +12,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
             <div className="lg:ml-64">
                 {/* Show main Header only on desktop */}
                 <div className="hidden lg:block">
-                    {/* <Header /> */}
+                    <Header />
                 </div>
                 {/* Mobile spacer - replaces the need for mobile header in Sidebar */}
                 <div className="h-16 lg:hidden" />

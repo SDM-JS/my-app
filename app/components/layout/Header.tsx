@@ -9,15 +9,15 @@ import { UserButton } from '@clerk/nextjs';
 import { useState, useEffect } from 'react';
 
 export default function Header() {
-    const { theme, setTheme } = useTheme();
+    const { setTheme, resolvedTheme } = useTheme();
     const [mounted, setMounted] = useState(false);
 
     useEffect(() => {
         setMounted(true);
     }, []);
 
-    // Use a default theme until mounted to avoid hydration mismatch
-    const currentTheme = mounted ? theme : 'light';
+    // Use resolved theme (light/dark) so system preference works; avoid hydration mismatch until mounted
+    const currentTheme = mounted ? (resolvedTheme ?? 'light') : 'light';
 
     return (
         <header className="fixed left-64 right-0 top-0 z-30 flex h-16 items-center gap-4 border-b bg-background px-6 shadow-sm max-lg:left-0">
@@ -39,16 +39,17 @@ export default function Header() {
                 <Button
                     variant="ghost"
                     size="icon"
+                    className="relative"
                     onClick={() => setTheme(currentTheme === 'dark' ? 'light' : 'dark')}
                     disabled={!mounted}
                 >
                     {mounted ? (
                         <>
                             <Sun className="h-5 w-5 rotate-0 scale-100 transition-transform dark:-rotate-90 dark:scale-0" />
-                            <Moon className="absolute h-5 w-5 rotate-90 scale-0 transition-transform dark:rotate-0 dark:scale-100" />
+                            <Moon className="absolute left-1/2 top-1/2 h-5 w-5 -translate-x-1/2 -translate-y-1/2 rotate-90 scale-0 transition-transform dark:rotate-0 dark:scale-100" />
                         </>
                     ) : (
-                        <div className="h-5 w-5" /> // Placeholder while loading
+                        <div className="h-5 w-5" />
                     )}
                     <span className="sr-only">Toggle theme</span>
                 </Button>

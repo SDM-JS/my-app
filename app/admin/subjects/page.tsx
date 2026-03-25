@@ -63,7 +63,6 @@ export default function SubjectsPage() {
         if (subjectsData) {
             setSubjects(subjectsData);
             setTableData(transformSubjectsForTable(subjectsData));
-            refetch()
         }
     }, [subjectsData]);
 

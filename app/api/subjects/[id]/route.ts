@@ -69,7 +69,6 @@ export async function DELETE(
 ) {
     try {
         const { id } = await params
-        console.log(id)
         // Check if subject has courses
         const coursesCount = await prisma.course.count({
             where: { subjectId: id }

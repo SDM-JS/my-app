@@ -6,6 +6,13 @@
         "-y",
         "next-devtools-mcp@latest"
       ]
+    },
+    "clerk-mcp": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "clerk-mcp@latest"
+      ]
     }
   }
 }

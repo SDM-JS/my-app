@@ -34,34 +34,37 @@ export async function POST(request: NextRequest) {
         const body = await request.json();
 
         // Validate required fields
-        if (!body.name || !body.phone || !body.birthday || !body.cameFrom) {
+        if (!body.name || !body.phone || !body.birthday) {
             return NextResponse.json(
-                { error: 'Name, phone, birthday, and cameFrom are required' },
+                { error: 'Name, phone, and birthday are required' },
                 { status: 400 }
             );
         }
 
-        const studentData: any = {
-            name: body.name,
-            phone: body.phone,
-            birthday: new Date(body.birthday),
-            cameFrom: {
-                connect:{id: body.cameFrom}
-            }
-        };
-
-        // Only connect course if provided
-        if (body.courseId) {
-            studentData.courses = {
-                connect: { id: body.courseId }
-            };
+        const birthday = new Date(body.birthday);
+        if (isNaN(birthday.getTime())) {
+            return NextResponse.json(
+                { error: 'Invalid birthday date' },
+                { status: 400 }
+            );
         }
 
-        // Only connect group if provided
+        const studentData: Prisma.StudentCreateInput = {
+            name: body.name,
+            phone: body.phone,
+            birthday,
+        };
+
+        const cameFromId = body.cameFrom ?? body.cameFromId;
+        if (cameFromId) {
+            studentData.cameFrom = { connect: { id: cameFromId } };
+        }
+
+        if (body.courseId) {
+            studentData.courses = { connect: { id: body.courseId } };
+        }
         if (body.groupId) {
-            studentData.group = {
-                connect: { id: body.groupId }
-            };
+            studentData.group = { connect: { id: body.groupId } };
         }
 
         const student = await prisma.student.create({

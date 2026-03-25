@@ -54,8 +54,11 @@ const transformGroupsForTable = (groups: GroupWithRelations[]) => {
         course: group.course?.name || 'No course',
         teacher: group.teacher?.name || 'No teacher',
         studentCount: group.students?.length || 0,
+        from: (group as any).from,
+        to: (group as any).to,
+        daysOfWeek: (group as any).daysOfWeek ?? [],
         // Keep the original objects for render functions
-        _cource: group.course,
+        _course: group.course,
         _teacher: group.teacher,
         _students: group.students,
         _raw: group // Keep raw data for actions
@@ -164,7 +167,7 @@ export default function GroupsPage() {
             setSelectedGroup(originalGroup);
 
             // Set course
-            const courseObj = originalGroup.cource;
+            const courseObj = originalGroup.course;
             setSelectedCourse(courseObj);
             setValue('courseId', originalGroup.courseId || '');
 
@@ -272,7 +275,7 @@ export default function GroupsPage() {
             const toTime = new Date(`${today.toISOString().split('T')[0]}T${data.to}:00`);
 
             const response = await axiosClient.put(`/api/groups/${id}`, {
-                studentName: data.name,
+                name: data.name,
                 courseId: data.courseId,
                 teacherId: data.teacherId,
                 from: fromTime,
@@ -315,10 +318,10 @@ export default function GroupsPage() {
                 // Delete group from database
                 await axiosClient.delete(`/api/groups/${selectedGroup.id}`);
 
-                // Update local state
                 setGroups(groups.filter((g) => g.id !== selectedGroup.id));
                 toast.success("Group deleted successfully!");
                 closeDeleteDialog();
+                await refetch();
             } catch (error: any) {
                 console.error('Error deleting group:', error);
                 const errorMessage = error.response?.data?.error || "Failed to delete group";
@@ -370,10 +373,11 @@ export default function GroupsPage() {
             label: 'Time',
             sortable: true,
             render: (value: Date, item: any) => {
+                if (value == null || item?.to == null) return <span className="text-muted-foreground">—</span>;
                 const fromDate = new Date(value);
                 const toDate = new Date(item.to);
                 if (isNaN(fromDate.getTime()) || isNaN(toDate.getTime())) {
-                    return 'Invalid time';
+                    return <span className="text-muted-foreground">—</span>;
                 }
                 return `${fromDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} - ${toDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
             },
@@ -483,7 +487,7 @@ export default function GroupsPage() {
             />
 
             {/* Group Form Dialog */}
-            <Dialog open={isDialogOpen} onOpenChange={closeDialog}>
+            <Dialog open={isDialogOpen} onOpenChange={(open) => { if (!open) closeDialog(); }}>
                 <DialogContent className="max-w-md">
                     <DialogHeader>
                         <DialogTitle>
@@ -756,7 +760,7 @@ export default function GroupsPage() {
             </Dialog>
 
             {/* Delete Confirmation Dialog */}
-            <Dialog open={isDeleteDialogOpen} onOpenChange={closeDeleteDialog}>
+            <Dialog open={isDeleteDialogOpen} onOpenChange={(open) => { if (!open) closeDeleteDialog(); }}>
                 <DialogContent className="max-w-md">
                     <DialogHeader>
                         <DialogTitle className="text-destructive">Delete Group</DialogTitle>

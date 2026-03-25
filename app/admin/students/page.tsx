@@ -208,10 +208,10 @@ export default function StudentsPage() {
                 // Delete student from database
                 await axiosClient.delete(`/api/students/${selectedStudent.id}`);
 
-                // Update local state
                 setStudents(students.filter((s) => s.id !== selectedStudent.id));
                 toast.success("Student deleted successfully!");
                 closeDeleteDialog();
+                await refetch();
             } catch (error: any) {
                 console.error('Error deleting student:', error);
                 const errorMessage = error.response?.data?.error || "Failed to delete student";
