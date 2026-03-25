@@ -21,8 +21,18 @@ import { toast } from 'sonner';
 import { Textarea } from '@/components/ui/textarea';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { axiosClient } from '@/lib/axiosClient';
-import type { Lessons, Groups, Teacher } from '@prisma/client';
-import { DaysOfWeek } from '@prisma/client';
+import type { Lessons, Groups, Teacher, $Enums } from '@prisma/client';
+
+type DaysOfWeek = $Enums.DaysOfWeek;
+
+const DaysOfWeek = {
+    Monday: 'Monday' as DaysOfWeek,
+    Tuesday: 'Tuesday' as DaysOfWeek,
+    Wednesday: 'Wednesday' as DaysOfWeek,
+    Thursday: 'Thursday' as DaysOfWeek,
+    Friday: 'Friday' as DaysOfWeek,
+    Saturday: 'Saturday' as DaysOfWeek,
+};
 import { Loader2 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -273,6 +283,12 @@ export default function LessonsPage() {
             [DaysOfWeek.Thursday]: 'bg-yellow-500 hover:bg-yellow-600',
             [DaysOfWeek.Friday]: 'bg-orange-500 hover:bg-orange-600',
             [DaysOfWeek.Saturday]: 'bg-red-500 hover:bg-red-600',
+            Monday: '',
+            Tuesday: '',
+            Wednesday: '',
+            Thursday: '',
+            Friday: '',
+            Saturday: ''
         };
         return colors[day] || 'bg-muted';
     };

@@ -1,49 +1,57 @@
-### Base deps
-FROM node:20-alpine AS deps
+FROM node:20-alpine AS base
+
+# Install pnpm and dependencies for node-gyp if needed
+RUN apk add --no-cache libc6-compat
+RUN corepack enable && corepack prepare pnpm@latest --activate
+
+# 1. Install dependencies only when needed
+FROM base AS deps
 WORKDIR /app
 
-# Enable pnpm (project has pnpm-lock.yaml)
-RUN corepack enable
+# Copy package files
+COPY package.json pnpm-lock.yaml* ./
+COPY prisma ./prisma/
 
-COPY package.json pnpm-lock.yaml ./
+# Install dependencies
 RUN pnpm install --frozen-lockfile
 
-### Build
-FROM node:20-alpine AS builder
+# 2. Rebuild the source code only when needed
+FROM base AS builder
 WORKDIR /app
-RUN corepack enable
-
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
-# Prisma client generation needs schema
-RUN pnpm -s generate
-RUN pnpm -s build
+# Generate Prisma Client
+RUN pnpm prisma generate
 
-### Runtime
-FROM node:20-alpine AS runner
+# Build the application
+# Disable telemetry during build
+ENV NEXT_TELEMETRY_DISABLED 1
+RUN pnpm run build
+
+# 3. Production image, copy all the files and run next
+FROM base AS runner
 WORKDIR /app
-ENV NODE_ENV=production
 
-RUN corepack enable
+ENV NODE_ENV production
+ENV NEXT_TELEMETRY_DISABLED 1
 
-# Only bring what we need to run
-COPY --from=builder /app/package.json ./package.json
-COPY --from=builder /app/pnpm-lock.yaml ./pnpm-lock.yaml
-COPY --from=builder /app/next.config.ts ./next.config.ts
+RUN addgroup --system --gid 1001 nodejs
+RUN adduser --system --uid 1001 nextjs
+
 COPY --from=builder /app/public ./public
-COPY --from=builder /app/.next ./.next
-COPY --from=builder /app/prisma ./prisma
 
-# Install production deps (includes prisma client runtime)
-# We keep devDependencies because Prisma CLI is needed at runtime
-# to run `prisma migrate deploy` in the entrypoint.
-RUN pnpm install --frozen-lockfile
+# Automatically leverage output traces to reduce image size
+# https://nextjs.org/docs/advanced-features/output-file-tracing
+COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
+COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 
-COPY docker-entrypoint.sh ./docker-entrypoint.sh
-RUN chmod +x ./docker-entrypoint.sh
+USER nextjs
 
 EXPOSE 3000
 
-ENTRYPOINT ["./docker-entrypoint.sh"]
-CMD ["pnpm", "start"]
+ENV PORT 3000
+# set hostname to localhost
+ENV HOSTNAME "0.0.0.0"
+
+CMD ["node", "server.js"]
