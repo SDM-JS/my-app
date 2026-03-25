@@ -1,7 +1,6 @@
 // app/api/groups/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { redis } from '@/lib/redis';
 import logger from '@/lib/logger';
 
 const cacheKey = "groups:all"
@@ -9,10 +8,6 @@ const cacheKey = "groups:all"
 export async function GET() {
     try {
         // Check cache first
-        const cached = await redis.get(cacheKey);
-        if (cached) {
-            return NextResponse.json(JSON.parse(cached));
-        }
 
         const groups = await prisma.groups.findMany({
             orderBy: {
@@ -42,9 +37,6 @@ export async function GET() {
                 }
             }
         });
-
-        // Cache the result for 60 seconds
-        await redis.set(cacheKey, JSON.stringify(groups), "EX", 60);
 
         return NextResponse.json(groups);
     } catch (error) {
@@ -102,9 +94,6 @@ export async function POST(request: NextRequest) {
                 }
             }
         });
-
-        // Clear the cache since data has changed
-        await redis.del(cacheKey);
 
         return NextResponse.json(group, { status: 201 });
     } catch (error: any) {
