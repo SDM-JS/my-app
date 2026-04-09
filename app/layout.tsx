@@ -4,14 +4,15 @@ import { ThemeProvider } from '@/components/providers/next.theme.provider';
 import { Toaster } from '@/components/ui/sonner';
 import QueryClientPro from '@/components/providers/query.client.provider';
 import { ClerkProvider } from "@clerk/nextjs"
+import React from "react";
+import { ImageKitProvider } from '@imagekit/next';
+import { ruRU } from "@clerk/localizations"
 
 export const metadata: Metadata = {
   title: 'EduCRM - Educational Center Management',
   description: 'Modern CRM dashboard for educational centers',
 };
-
-// const API_KEY = import.meta.env!.CLERK_PUBLISHABLE_KEY!
-
+const imagekitEndpoint = process.env.NEXT_PUBLIC_IMAGEKIT_ENDPOINT!
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -20,7 +21,8 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body suppressHydrationWarning>
-        <ClerkProvider signInUrl='/' signInForceRedirectUrl={"/"}>
+        <ClerkProvider signInUrl='/' signInForceRedirectUrl={"/"} localization={ruRU}>
+        <ImageKitProvider urlEndpoint={imagekitEndpoint}>
 
           <QueryClientPro>
             <ThemeProvider
@@ -33,7 +35,7 @@ export default function RootLayout({
               <Toaster position='bottom-center' />
             </ThemeProvider>
           </QueryClientPro>
-
+        </ImageKitProvider>
         </ClerkProvider>
       </body>
     </html >

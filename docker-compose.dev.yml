@@ -1,0 +1,41 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: deps
+    working_dir: /app
+    command: pnpm dev
+    ports:
+      - "3000:3000"
+    depends_on:
+      - db
+    environment:
+      NODE_ENV: development
+      DATABASE_URL: postgresql://postgres:postgres@db:5432/educrm?schema=public
+      NEXT_PUBLIC_IMAGEKIT_ENDPOINT: ${NEXT_PUBLIC_IMAGEKIT_ENDPOINT}
+      IMAGEKIT_PUBLIC_KEY: ${IMAGEKIT_PUBLIC_KEY}
+      IMAGEKIT_PRIVATE_KEY: ${IMAGEKIT_PRIVATE_KEY}
+      CLERK_ORG_ID: ${CLERK_ORG_ID}
+      CLERK_SECRET_KEY: ${CLERK_SECRET_KEY}
+      NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: ${NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY}
+    volumes:
+      - .:/app
+      - app_node_modules:/app/node_modules
+
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: educrm
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+volumes:
+  postgres_data:
+  app_node_modules:
+

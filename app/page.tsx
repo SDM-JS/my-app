@@ -18,26 +18,27 @@ import { useEffect, useState } from 'react' // Added useState
 import { useRouter } from 'next/navigation'
 
 export default function SignInPage() {
-    const { isLoaded, isSignedIn } = useUser()
-    const { orgRole } = useAuth();
+    const {isLoaded, isSignedIn} = useUser()
+    const {orgRole} = useAuth();
     const router = useRouter()
     const [shouldRedirect, setShouldRedirect] = useState(false) // Track redirect state
 
-    const splittedRole = orgRole?.split(":")[1]
+    const splitRole = orgRole?.split(":")[1]
 
     useEffect(() => {
-        if (isSignedIn && splittedRole) {
+        if (isSignedIn && splitRole) {
+            // eslint-disable-next-line react-hooks/set-state-in-effect
             setShouldRedirect(true)
-            router.push(`/${splittedRole}`)
+            router.push(`/${splitRole}`)
         }
-    }, [isSignedIn, splittedRole, router])
+    }, [isSignedIn, splitRole, router])
 
     // Don't render anything while checking auth state
     if (!isLoaded) {
         return (
             <div className="flex w-full items-center px-4 sm:justify-center justify-center h-screen">
                 <div className="flex items-center justify-center">
-                    <Loader2 className="size-8 animate-spin" />
+                    <Loader2 className="size-8 animate-spin"/>
                 </div>
             </div>
         )
@@ -48,7 +49,7 @@ export default function SignInPage() {
         return (
             <div className="flex w-full items-center px-4 sm:justify-center justify-center h-screen">
                 <div className="flex items-center justify-center">
-                    <Loader2 className="size-8 animate-spin" />
+                    <Loader2 className="size-8 animate-spin"/>
                     <span className="ml-2">Redirecting...</span>
                 </div>
             </div>
@@ -73,9 +74,9 @@ export default function SignInPage() {
                                                 <Label>Email address</Label>
                                             </Clerk.Label>
                                             <Clerk.Input type="email" required asChild>
-                                                <Input />
+                                                <Input/>
                                             </Clerk.Input>
-                                            <Clerk.FieldError className="block text-sm text-destructive" />
+                                            <Clerk.FieldError className="block text-sm text-destructive"/>
                                         </Clerk.Field>
                                     </CardContent>
                                     <CardFooter>
@@ -85,7 +86,7 @@ export default function SignInPage() {
                                                     <Clerk.Loading>
                                                         {(isLoading) => {
                                                             return isLoading ? (
-                                                                <Loader2 className="size-4 animate-spin" />
+                                                                <Loader2 className="size-4 animate-spin"/>
                                                             ) : (
                                                                 'Continue'
                                                             )
@@ -101,7 +102,7 @@ export default function SignInPage() {
                             <SignIn.Step name="choose-strategy">
                                 <Card className="w-full sm:w-96">
                                     <CardHeader>
-                                        <CardTitle>Use another method</CardTitle>
+                                        <CardTitle>Change Email</CardTitle>
                                         <CardDescription>
                                             Facing issues? You can use any of these methods to sign in.
                                         </CardDescription>
@@ -125,7 +126,7 @@ export default function SignInPage() {
                                                     <Clerk.Loading>
                                                         {(isLoading) => {
                                                             return isLoading ? (
-                                                                <Loader2 className="size-4 animate-spin" />
+                                                                <Loader2 className="size-4 animate-spin"/>
                                                             ) : (
                                                                 'Go back'
                                                             )
@@ -144,7 +145,7 @@ export default function SignInPage() {
                                         <CardHeader>
                                             <CardTitle>Enter your password</CardTitle>
                                             <p className="text-sm text-muted-foreground">
-                                                Welcome back <SignIn.SafeIdentifier />
+                                                Welcome back <SignIn.SafeIdentifier/>
                                             </p>
                                         </CardHeader>
                                         <CardContent className="grid gap-y-4">
@@ -153,9 +154,9 @@ export default function SignInPage() {
                                                     <Label>Password</Label>
                                                 </Clerk.Label>
                                                 <Clerk.Input type="password" asChild>
-                                                    <Input />
+                                                    <Input/>
                                                 </Clerk.Input>
-                                                <Clerk.FieldError className="block text-sm text-destructive" />
+                                                <Clerk.FieldError className="block text-sm text-destructive"/>
                                             </Clerk.Field>
                                         </CardContent>
                                         <CardFooter>
@@ -165,7 +166,7 @@ export default function SignInPage() {
                                                         <Clerk.Loading>
                                                             {(isLoading) => {
                                                                 return isLoading ? (
-                                                                    <Loader2 className="size-4 animate-spin" />
+                                                                    <Loader2 className="size-4 animate-spin"/>
                                                                 ) : (
                                                                     'Continue'
                                                                 )
@@ -175,7 +176,7 @@ export default function SignInPage() {
                                                 </SignIn.Action>
                                                 <SignIn.Action navigate="choose-strategy" asChild>
                                                     <Button type="button" size="sm" variant="link">
-                                                        Use another method
+                                                        Change your email address
                                                     </Button>
                                                 </SignIn.Action>
                                             </div>
@@ -191,7 +192,7 @@ export default function SignInPage() {
                                                 Enter the verification code sent to your email
                                             </CardDescription>
                                             <p className="text-sm text-muted-foreground">
-                                                Welcome back <SignIn.SafeIdentifier />
+                                                Welcome back <SignIn.SafeIdentifier/>
                                             </p>
                                         </CardHeader>
                                         <CardContent className="grid gap-y-4">
@@ -203,7 +204,7 @@ export default function SignInPage() {
                                                             type="otp"
                                                             autoSubmit
                                                             className="flex justify-center has-disabled:opacity-50"
-                                                            render={({ value, status }) => {
+                                                            render={({value, status}) => {
                                                                 return (
                                                                     <div
                                                                         data-status={status}
@@ -215,12 +216,13 @@ export default function SignInPage() {
                                                             }}
                                                         />
                                                     </div>
-                                                    <Clerk.FieldError className="block text-sm text-destructive text-center" />
+                                                    <Clerk.FieldError
+                                                        className="block text-sm text-destructive text-center"/>
                                                     <SignIn.Action
                                                         asChild
                                                         resend
                                                         className="text-muted-foreground"
-                                                        fallback={({ resendableAfter }) => (
+                                                        fallback={({resendableAfter}) => (
                                                             <Button variant="link" size="sm" disabled>
                                                                 Didn&apos;t receive a code? Resend (
                                                                 <span className="tabular-nums">{resendableAfter}</span>)
@@ -241,7 +243,7 @@ export default function SignInPage() {
                                                         <Clerk.Loading>
                                                             {(isLoading) => {
                                                                 return isLoading ? (
-                                                                    <Loader2 className="size-4 animate-spin" />
+                                                                    <Loader2 className="size-4 animate-spin"/>
                                                                 ) : (
                                                                     'Continue'
                                                                 )

@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import DataTable from '@/app/components/DataTable';
-import { Plus, Pencil, Trash2, Eye, Search, BookOpen, X, Tag } from 'lucide-react';
+import { Plus, Pencil, Trash2, Eye, BookOpen, Tag } from 'lucide-react';
 import {
     Dialog,
     DialogContent,
@@ -22,26 +22,26 @@ import { useQuery } from '@tanstack/react-query';
 import { axiosClient } from '@/lib/axiosClient';
 import { Subject } from '@prisma/client';
 
-// Zod schema for subject
+// Схема Zod для предмета
 const subjectSchema = z.object({
-    name: z.string().min(1, 'Subject name is required').max(100, 'Subject name is too long'),
+    name: z.string().min(1, 'Название предмета обязательно').max(100, 'Название слишком длинное'),
 });
 
 type SubjectFormData = z.infer<typeof subjectSchema>;
 
-// Helper function to transform subjects for DataTable
+// Помощник для трансформации данных для таблицы
 const transformSubjectsForTable = (subjects: Subject[]) => {
     return subjects.map(subject => ({
         id: subject.id,
         name: subject.name,
         createdAt: subject.createdAt,
         updatedAt: subject.updatedAt,
-        _raw: subject // Keep raw data for actions
+        _raw: subject // Сохраняем исходные данные для действий
     }));
 };
 
 export default function SubjectsPage() {
-    // Fetch subjects data
+    // Загрузка данных предметов
     const { data: subjectsData, isLoading, refetch } = useQuery({
         queryKey: ["subjects"],
         queryFn: async () => {
@@ -57,17 +57,14 @@ export default function SubjectsPage() {
     const [viewMode, setViewMode] = useState<'view' | 'edit' | 'create'>('create');
     const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
-    // const [searchTerm, setSearchTerm] = useState('');
 
     useEffect(() => {
         if (subjectsData) {
             setSubjects(subjectsData);
             setTableData(transformSubjectsForTable(subjectsData));
-            refetch()
         }
     }, [subjectsData]);
 
-    // Filter subjects based on search
     const filteredTableData = tableData;
 
     const {
@@ -112,7 +109,7 @@ export default function SubjectsPage() {
         reset();
     };
 
-    // Create subject using API route
+    // Создание предмета
     const createSubject = async (data: SubjectFormData) => {
         const response = await axiosClient.post('/api/subjects', {
             name: data.name,
@@ -120,7 +117,7 @@ export default function SubjectsPage() {
         return response.data;
     };
 
-    // Update subject using API route
+    // Обновление предмета
     const updateSubject = async (id: string, data: SubjectFormData) => {
         try {
             const response = await axiosClient.put(`/api/subjects/${id}`, {
@@ -128,7 +125,7 @@ export default function SubjectsPage() {
             });
             return response.data;
         } catch (error: any) {
-            throw new Error(error.response?.data?.error || 'Failed to update subject');
+            throw new Error(error.response?.data?.error || 'Не удалось обновить предмет');
         }
     };
 
@@ -136,21 +133,19 @@ export default function SubjectsPage() {
         setIsSubmitting(true);
         try {
             if (viewMode === 'edit' && selectedSubject) {
-                // Update subject
                 await updateSubject(selectedSubject.id, data);
-                toast.success("Subject updated successfully!");
+                toast.success("Предмет успешно обновлен!");
                 refetch();
                 closeDialog();
             } else if (viewMode === 'create') {
-                // Create new subject
                 await createSubject(data);
-                toast.success("Subject created successfully!");
+                toast.success("Предмет успешно создан!");
                 refetch();
                 closeDialog();
             }
         } catch (error: any) {
-            console.error('Error submitting subject:', error);
-            toast.error(error.message || "Failed to save subject");
+            console.error('Ошибка при отправке:', error);
+            toast.error(error.message || "Не удалось сохранить предмет");
         } finally {
             setIsSubmitting(false);
         }
@@ -159,40 +154,36 @@ export default function SubjectsPage() {
     const handleDelete = async () => {
         if (selectedSubject) {
             try {
-                // Delete subject from database
-                setIsSubmitting(true)
-                console.log(selectedSubject)
+                setIsSubmitting(true);
                 await axiosClient.delete(`/api/subjects/${selectedSubject.id}`);
 
                 setSubjects(subjects.filter((s) => s.id !== selectedSubject.id));
-                toast.success("Subject deleted successfully!");
+                toast.success("Предмет удален!");
                 closeDeleteDialog();
                 refetch();
 
-                setIsSubmitting(false)
+                setIsSubmitting(false);
             } catch (error: any) {
-                console.error('Error deleting subject:', error);
-                const errorMessage = error.response?.data?.error || "Failed to delete subject";
+                console.error('Ошибка удаления:', error);
+                const errorMessage = error.response?.data?.error || "Не удалось удалить предмет";
                 toast.error(errorMessage);
-                setIsSubmitting(false)
-                closeDeleteDialog()
+                setIsSubmitting(false);
+                closeDeleteDialog();
 
-                // If it's a "not found" error, remove from local state anyway
                 if (error.response?.status === 404) {
                     setSubjects(subjects.filter((s) => s.id !== selectedSubject.id));
-                    toast.info("Subject was already removed");
-                    setIsSubmitting(false)
+                    toast.info("Предмет уже был удален");
+                    setIsSubmitting(false);
                     closeDeleteDialog();
                 }
             }
         }
     };
 
-    // Columns definition for DataTable
     const columns = [
         {
             key: 'name',
-            label: 'Subject Name',
+            label: 'Название предмета',
             sortable: true,
             render: (value: string, item: any) => {
                 return (
@@ -212,10 +203,10 @@ export default function SubjectsPage() {
         },
         {
             key: 'createdAt',
-            label: 'Created',
+            label: 'Создан',
             sortable: true,
             render: (value: Date) => {
-                return new Date(value).toLocaleDateString('en-US', {
+                return new Date(value).toLocaleDateString('ru-RU', {
                     year: 'numeric',
                     month: 'short',
                     day: 'numeric'
@@ -224,10 +215,10 @@ export default function SubjectsPage() {
         },
         {
             key: 'updatedAt',
-            label: 'Last Updated',
+            label: 'Обновлен',
             sortable: true,
             render: (value: Date) => {
-                return new Date(value).toLocaleDateString('en-US', {
+                return new Date(value).toLocaleDateString('ru-RU', {
                     year: 'numeric',
                     month: 'short',
                     day: 'numeric'
@@ -236,7 +227,6 @@ export default function SubjectsPage() {
         },
     ];
 
-    // Loading state
     if (isLoading) {
         return (
             <div className="space-y-6">
@@ -276,27 +266,26 @@ export default function SubjectsPage() {
 
     return (
         <div className="space-y-6">
-            {/* Header */}
+            {/* Заголовок */}
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                 <div>
-                    <h1 className="text-3xl font-bold">Subjects</h1>
+                    <h1 className="text-3xl font-bold">Предметы</h1>
                     <p className="text-muted-foreground">
-                        Manage all subjects ({filteredTableData.length} total)
+                        Управление всеми предметами (всего: {filteredTableData.length})
                     </p>
                 </div>
                 <div className="flex flex-col sm:flex-row gap-3">
-
                     <Button
                         onClick={() => openDialog('create')}
                         className="gap-2"
                     >
                         <Plus className="h-4 w-4" />
-                        Create Subject
+                        Создать предмет
                     </Button>
                 </div>
             </div>
 
-            {/* Data Table */}
+            {/* Таблица данных */}
             <DataTable
                 columns={columns}
                 data={filteredTableData}
@@ -306,7 +295,7 @@ export default function SubjectsPage() {
                             variant="ghost"
                             size="icon"
                             onClick={() => openDialog('view', item)}
-                            title="View subject"
+                            title="Просмотреть"
                         >
                             <Eye className="h-4 w-4" />
                         </Button>
@@ -314,7 +303,7 @@ export default function SubjectsPage() {
                             variant="ghost"
                             size="icon"
                             onClick={() => openDialog('edit', item)}
-                            title="Edit subject"
+                            title="Редактировать"
                         >
                             <Pencil className="h-4 w-4" />
                         </Button>
@@ -322,7 +311,7 @@ export default function SubjectsPage() {
                             variant="ghost"
                             size="icon"
                             onClick={() => openDeleteDialog(item)}
-                            title="Delete subject"
+                            title="Удалить"
                         >
                             <Trash2 className="h-4 w-4 text-destructive" />
                         </Button>
@@ -333,40 +322,40 @@ export default function SubjectsPage() {
                         <div className="mx-auto h-12 w-12 text-muted-foreground mb-4">
                             <BookOpen className="h-12 w-12" />
                         </div>
-                        <h3 className="font-semibold text-lg mb-2">No subjects found</h3>
+                        <h3 className="font-semibold text-lg mb-2">Предметы не найдены</h3>
                         <p className="text-muted-foreground mb-4">
-                            {subjectsData ? 'Try a different search term' : 'Get started by creating a new subject'}
+                            {subjectsData ? 'Попробуйте изменить поисковый запрос' : 'Начните с создания нового предмета'}
                         </p>
                         {subjectsData && (
                             <Button onClick={() => openDialog('create')}>
                                 <Plus className="h-4 w-4 mr-2" />
-                                Create Subject
+                                Создать предмет
                             </Button>
                         )}
                     </div>
                 }
             />
 
-            {/* Subject Form Dialog */}
+            {/* Диалог формы предмета */}
             <Dialog open={isDialogOpen} onOpenChange={closeDialog}>
                 <DialogContent className="max-w-md">
                     <DialogHeader>
                         <DialogTitle>
-                            {viewMode === 'create' ? 'Create New Subject' :
-                                viewMode === 'edit' ? 'Edit Subject' : 'View Subject'}
+                            {viewMode === 'create' ? 'Создать новый предмет' :
+                                viewMode === 'edit' ? 'Редактировать предмет' : 'Просмотр предмета'}
                         </DialogTitle>
                         <DialogDescription>
                             {viewMode === 'create'
-                                ? 'Add a new subject to the system'
+                                ? 'Добавьте новый предмет в систему'
                                 : viewMode === 'edit'
-                                    ? 'Update subject information'
-                                    : 'Subject details'}
+                                    ? 'Обновите информацию о предмете'
+                                    : 'Детали предмета'}
                         </DialogDescription>
                     </DialogHeader>
                     <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
                         <div className="space-y-2">
                             <Label htmlFor="name">
-                                Subject Name *
+                                Название предмета *
                                 {viewMode === 'view' && selectedSubject && (
                                     <span className="text-xs text-muted-foreground ml-2">
                                         ID: {selectedSubject.id}
@@ -379,7 +368,7 @@ export default function SubjectsPage() {
                                     id="name"
                                     {...register('name')}
                                     disabled={viewMode === 'view' || isSubmitting}
-                                    placeholder="Enter subject name (e.g., Mathematics, Physics)"
+                                    placeholder="Введите название (напр., Математика, Физика)"
                                     className="pl-10"
                                 />
                             </div>
@@ -390,9 +379,9 @@ export default function SubjectsPage() {
                             <div className="space-y-3 pt-2 border-t">
                                 <div className="grid grid-cols-2 gap-4">
                                     <div>
-                                        <Label className="text-xs text-muted-foreground">Created</Label>
+                                        <Label className="text-xs text-muted-foreground">Создан</Label>
                                         <p className="text-sm">
-                                            {new Date(selectedSubject.createdAt).toLocaleDateString('en-US', {
+                                            {new Date(selectedSubject.createdAt).toLocaleDateString('ru-RU', {
                                                 year: 'numeric',
                                                 month: 'long',
                                                 day: 'numeric'
@@ -400,9 +389,9 @@ export default function SubjectsPage() {
                                         </p>
                                     </div>
                                     <div>
-                                        <Label className="text-xs text-muted-foreground">Last Updated</Label>
+                                        <Label className="text-xs text-muted-foreground">Последнее обновление</Label>
                                         <p className="text-sm">
-                                            {new Date(selectedSubject.updatedAt).toLocaleDateString('en-US', {
+                                            {new Date(selectedSubject.updatedAt).toLocaleDateString('ru-RU', {
                                                 year: 'numeric',
                                                 month: 'long',
                                                 day: 'numeric'
@@ -420,17 +409,17 @@ export default function SubjectsPage() {
                                 onClick={closeDialog}
                                 disabled={isSubmitting}
                             >
-                                {viewMode === 'view' ? 'Close' : 'Cancel'}
+                                {viewMode === 'view' ? 'Закрыть' : 'Отмена'}
                             </Button>
                             {viewMode !== 'view' && (
                                 <Button type="submit" disabled={isSubmitting} className='ml-2'>
                                     {isSubmitting ? (
                                         <div className="flex items-center gap-2">
                                             <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
-                                            {viewMode === 'create' ? 'Creating...' : 'Saving...'}
+                                            {viewMode === 'create' ? 'Создание...' : 'Сохранение...'}
                                         </div>
                                     ) : (
-                                        viewMode === 'create' ? 'Create Subject' : 'Save Changes'
+                                        viewMode === 'create' ? 'Создать предмет' : 'Сохранить изменения'
                                     )}
                                 </Button>
                             )}
@@ -439,29 +428,29 @@ export default function SubjectsPage() {
                 </DialogContent>
             </Dialog>
 
-            {/* Delete Confirmation Dialog */}
+            {/* Диалог подтверждения удаления */}
             <Dialog open={isDeleteDialogOpen} onOpenChange={closeDeleteDialog}>
                 <DialogContent className="max-w-md">
                     <DialogHeader>
-                        <DialogTitle className="text-destructive">Delete Subject</DialogTitle>
+                        <DialogTitle className="text-destructive">Удалить предмет</DialogTitle>
                         <DialogDescription>
-                            Are you sure you want to delete the "<strong>{selectedSubject?.name}</strong>" subject?
-                            This action cannot be undone.
+                            Вы уверены, что хотите удалить предмет "<strong>{selectedSubject?.name}</strong>"?
+                            Это действие нельзя отменить.
                         </DialogDescription>
                         <div className="mt-2 p-3 bg-destructive/10 rounded-md">
                             <p className="text-sm text-destructive font-medium">
-                                ⚠️ Important: You cannot delete a subject that has associated courses or teachers.
-                                Please remove all courses and teachers from this subject first.
+                                ⚠️ Важно: Нельзя удалить предмет, к которому привязаны курсы или преподаватели.
+                                Сначала удалите все зависимости.
                             </p>
                         </div>
                     </DialogHeader>
                     <DialogFooter>
                         <Button type="button" variant="outline" onClick={closeDeleteDialog} disabled={isSubmitting}>
-                            Cancel
+                            Отмена
                         </Button>
                         <Button type="button" variant="destructive" onClick={handleDelete} disabled={isSubmitting}>
                             {
-                                isSubmitting ? "Deleting Subject..." : "Delete Subject"
+                                isSubmitting ? "Удаление..." : "Удалить предмет"
                             }
                         </Button>
                     </DialogFooter>

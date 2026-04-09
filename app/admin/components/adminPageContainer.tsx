@@ -39,29 +39,29 @@ export default function AdminPageContainer({
     const router = useRouter();
     const { orgRole, isLoaded } = useAuth();
 
-    // Get target date (if Sunday, show Monday)
+    // Получить целевую дату (если воскресенье, показать понедельник)
     const getTargetDate = () => {
         const today = new Date();
-        const dayOfWeek = today.getDay(); // 0 = Sunday, 1 = Monday, etc.
+        const dayOfWeek = today.getDay(); // 0 = Воскресенье
 
-        if (dayOfWeek === 0) { // Sunday
-            return addDays(today, 1); // Monday
+        if (dayOfWeek === 0) { 
+            return addDays(today, 1); // Понедельник
         }
 
         return today;
     };
 
-    // Fetch lessons using React Query
+    // Загрузка занятий через React Query
     const { data: lessonsData, isLoading, error } = useQuery({
         queryKey: ["dashboard-lessons", selectedDate.toISOString().split('T')[0]],
         queryFn: async () => {
             const targetDate = getTargetDate();
             setSelectedDate(targetDate);
 
-            // Show toast for Sunday
+            // Показать уведомление в воскресенье
             if (new Date().getDay() === 0) {
-                toast.info('Showing Monday schedule', {
-                    description: 'Sunday automatically adjusted to Monday'
+                toast.info('Показано расписание на понедельник', {
+                    description: 'Воскресенье автоматически заменено на понедельник'
                 });
             }
 
@@ -75,41 +75,41 @@ export default function AdminPageContainer({
         enabled: isLoaded && orgRole === "org:admin",
     });
 
-    // Get day name for display
+    // Названия дней недели
     const getDayName = (date: Date) => {
-        const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+        const days = ['Воскресенье', 'Понедельник', 'Вторник', 'Среда', 'Четверг', 'Пятница', 'Суббота'];
         return days[date.getDay()];
     };
 
-    // Define columns for DataTable
+    // Определение колонок для DataTable
     const columns = useMemo(() => [
         {
             key: 'group',
-            label: 'Group',
+            label: 'Группа',
             sortable: true,
             render: (value: any, lesson: any) => {
-                return lesson.group?.name || 'No group';
+                return lesson.group?.name || 'Нет группы';
             }
         },
         {
             key: 'course',
-            label: 'Course',
+            label: 'Курс',
             sortable: true,
             render: (value: any, lesson: any) => {
-                return lesson.group?.course?.name || 'No course';
+                return lesson.group?.course?.name || 'Нет курса';
             }
         },
         {
             key: 'teacher',
-            label: 'Teacher',
+            label: 'Преподаватель',
             sortable: true,
             render: (value: any, lesson: any) => {
-                return lesson.teacher?.name || lesson.group?.teacher?.name || 'No teacher';
+                return lesson.teacher?.name || lesson.group?.teacher?.name || 'Не назначен';
             }
         },
         {
             key: 'time',
-            label: 'Time',
+            label: 'Время',
             sortable: true,
             render: (value: any, lesson: any) => {
                 const startTime = new Date(lesson.startTime);
@@ -124,7 +124,7 @@ export default function AdminPageContainer({
         },
         {
             key: 'room',
-            label: 'Room',
+            label: 'Кабинет',
             sortable: true,
             render: (value: any, lesson: any) => (
                 <div className="flex items-center gap-1">
@@ -135,7 +135,7 @@ export default function AdminPageContainer({
         },
         {
             key: 'students',
-            label: 'Students',
+            label: 'Ученики',
             sortable: false,
             render: (value: any, lesson: any) => (
                 <div className="flex items-center gap-1">
@@ -146,29 +146,18 @@ export default function AdminPageContainer({
         },
         {
             key: 'status',
-            label: 'Status',
+            label: 'Статус',
             sortable: false,
             render: (value: any, lesson: any) => {
                 const currentTime = new Date();
                 const startTime = new Date(lesson.startTime);
                 const endTime = new Date(lesson.endTime);
 
-                // Create lesson date with today's date but lesson's time
                 const lessonStart = new Date();
-                lessonStart.setHours(
-                    startTime.getHours(),
-                    startTime.getMinutes(),
-                    0,
-                    0
-                );
+                lessonStart.setHours(startTime.getHours(), startTime.getMinutes(), 0, 0);
 
                 const lessonEnd = new Date();
-                lessonEnd.setHours(
-                    endTime.getHours(),
-                    endTime.getMinutes(),
-                    0,
-                    0
-                );
+                lessonEnd.setHours(endTime.getHours(), endTime.getMinutes(), 0, 0);
 
                 const isOngoing = currentTime >= lessonStart && currentTime <= lessonEnd;
                 const isPast = currentTime > lessonEnd;
@@ -178,45 +167,32 @@ export default function AdminPageContainer({
                         <Badge className="bg-green-500 hover:bg-green-600">
                             <span className="flex items-center gap-1">
                                 <div className="h-2 w-2 rounded-full bg-white animate-pulse" />
-                                Ongoing
+                                Идет сейчас
                             </span>
                         </Badge>
                     );
                 } else if (isPast) {
-                    return <Badge variant="outline">Completed</Badge>;
+                    return <Badge variant="outline">Завершено</Badge>;
                 } else {
-                    return <Badge variant="outline">Upcoming</Badge>;
+                    return <Badge variant="outline">Ожидается</Badge>;
                 }
             }
         }
     ], []);
 
-    // Format data for DataTable
     const tableData = useMemo(() => {
         if (!lessonsData?.lessons) return [];
 
         return lessonsData.lessons.map((lesson: any) => {
-            // Parse lesson times for current day
             const startTime = new Date(lesson.startTime);
             const endTime = new Date(lesson.endTime);
-
-            // Create lesson date with today's date but lesson's time
             const today = getTargetDate();
+            
             const lessonStart = new Date(today);
-            lessonStart.setHours(
-                startTime.getHours(),
-                startTime.getMinutes(),
-                0,
-                0
-            );
+            lessonStart.setHours(startTime.getHours(), startTime.getMinutes(), 0, 0);
 
             const lessonEnd = new Date(today);
-            lessonEnd.setHours(
-                endTime.getHours(),
-                endTime.getMinutes(),
-                0,
-                0
-            );
+            lessonEnd.setHours(endTime.getHours(), endTime.getMinutes(), 0, 0);
 
             return {
                 ...lesson,
@@ -226,33 +202,30 @@ export default function AdminPageContainer({
                 room: lesson.room,
                 startTime: lessonStart,
                 endTime: lessonEnd,
-                originalStartTime: startTime, // Keep original for reference
+                originalStartTime: startTime,
                 originalEndTime: endTime,
-                isOngoing: false // Will be calculated in status column
+                isOngoing: false
             };
         });
     }, [lessonsData]);
 
-    // Use useEffect for navigation logic
     useEffect(() => {
         if (isLoaded && orgRole !== "org:admin") {
             router.push("/");
         }
     }, [orgRole, isLoaded, router]);
 
-    // Show loading state while auth is loading
     if (!isLoaded) {
         return (
             <div className="flex items-center justify-center h-64">
                 <div className="text-center">
                     <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
-                    <p className="mt-2 text-muted-foreground">Loading...</p>
+                    <p className="mt-2 text-muted-foreground">Загрузка...</p>
                 </div>
             </div>
         );
     }
 
-    // If not admin (after useEffect will redirect), show nothing
     if (orgRole !== "org:admin") {
         return null;
     }
@@ -260,79 +233,79 @@ export default function AdminPageContainer({
     return (
         <div className="space-y-6">
             <div>
-                <h1 className="text-3xl font-bold">Dashboard</h1>
+                <h1 className="text-3xl font-bold">Панель управления</h1>
                 <p className="text-muted-foreground">
                     {selectedDate.toDateString() === new Date().toDateString()
-                        ? "Today's overview"
-                        : `Showing lessons for ${getDayName(selectedDate)} (${format(selectedDate, 'MMM d, yyyy')})`
+                        ? "Обзор на сегодня"
+                        : `Занятия на ${getDayName(selectedDate)} (${format(selectedDate, 'd MMM, yyyy')})`
                     }
                 </p>
             </div>
 
-            {/* Stats Grid */}
+            {/* Сетка статистики */}
             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
                 <Card className="transition-smooth hover:shadow-md">
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Total Students</CardTitle>
+                        <CardTitle className="text-sm font-medium">Всего учеников</CardTitle>
                         <Users className="h-5 w-5 text-blue-500" />
                     </CardHeader>
                     <CardContent>
                         <div className="text-2xl font-bold">{totalStudents}</div>
                         <p className="text-xs text-muted-foreground mt-1">
-                            <span className="font-medium">{newStudentsMonth} new students</span>
+                            <span className="font-medium">{newStudentsMonth} новых учеников</span>
                         </p>
                     </CardContent>
                 </Card>
 
                 <Card className="transition-smooth hover:shadow-md">
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Total Teachers</CardTitle>
+                        <CardTitle className="text-sm font-medium">Преподаватели</CardTitle>
                         <GraduationCap className="h-5 w-5 text-green-500" />
                     </CardHeader>
                     <CardContent>
                         <div className="text-2xl font-bold">{totalTeachers}</div>
-                        <p className="text-xs text-muted-foreground mt-1">Active instructors</p>
+                        <p className="text-xs text-muted-foreground mt-1">Активные инструкторы</p>
                     </CardContent>
                 </Card>
 
                 <Card className="transition-smooth hover:shadow-md">
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Payments This Month</CardTitle>
+                        <CardTitle className="text-sm font-medium">Платежи за месяц</CardTitle>
                         <CreditCard className="h-5 w-5 text-amber-500" />
                     </CardHeader>
                     <CardContent>
                         <div className="text-2xl font-bold">${paymentsForMonth}</div>
                         <p className="text-xs text-muted-foreground mt-1">
-                            {persState === "desc" && <span><TrendingUp className="inline h-3 w-3 text-green-500" /> {pers.toFixed(2)}% from last month</span>}
-                            {persState === "asc" && <span><TrendingDown className="inline h-3 w-3 text-red-500" />  -{fixedPers}% from last month</span>}
+                            {persState === "desc" && <span><TrendingUp className="inline h-3 w-3 text-green-500" /> {pers.toFixed(2)}% с прошлого месяца</span>}
+                            {persState === "asc" && <span><TrendingDown className="inline h-3 w-3 text-red-500" />  -{fixedPers}% с прошлого месяца</span>}
                         </p>
                     </CardContent>
                 </Card>
 
                 <Card className="transition-smooth hover:shadow-md">
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Attendance Rate</CardTitle>
+                        <CardTitle className="text-sm font-medium">Посещаемость</CardTitle>
                         <CheckSquare className="h-5 w-5 text-purple-500" />
                     </CardHeader>
                     <CardContent>
                         <div className="text-2xl font-bold">{attendanceRate}%</div>
-                        <p className="text-xs text-muted-foreground mt-1">Today's attendance</p>
+                        <p className="text-xs text-muted-foreground mt-1">Посещаемость за сегодня</p>
                     </CardContent>
                 </Card>
             </div>
 
-            {/* Lessons Table */}
+            {/* Таблица занятий */}
             <Card>
                 <CardHeader>
                     <CardTitle className="flex items-center gap-2">
                         <Calendar className="h-5 w-5" />
                         {selectedDate.toDateString() === new Date().toDateString()
-                            ? "Today's Lessons"
-                            : `${getDayName(selectedDate)}'s Lessons`
+                            ? "Занятия на сегодня"
+                            : `Занятия: ${getDayName(selectedDate)}`
                         }
                         {selectedDate.getDay() === 1 && new Date().getDay() === 0 && (
                             <Badge variant="outline" className="ml-2">
-                                Monday (Sunday auto-adjusted)
+                                Понедельник (авто-корректировка)
                             </Badge>
                         )}
                     </CardTitle>
@@ -341,27 +314,25 @@ export default function AdminPageContainer({
                     {isLoading ? (
                         <div className="flex items-center justify-center p-8">
                             <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                            <span className="ml-2">Loading lessons...</span>
+                            <span className="ml-2">Загрузка расписания...</span>
                         </div>
                     ) : error ? (
                         <div className="text-center p-8">
-                            <p className="text-red-500">Failed to load lessons</p>
+                            <p className="text-red-500">Не удалось загрузить занятия</p>
                         </div>
                     ) : tableData.length === 0 ? (
                         <div className="text-center p-8">
                             <Calendar className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
-                            <p className="text-muted-foreground">No lessons scheduled</p>
+                            <p className="text-muted-foreground">Нет запланированных занятий</p>
                         </div>
                     ) : (
                         <div className="space-y-4">
                             <DataTable
                                 columns={columns}
                                 data={tableData}
-
                             />
-                            {/* Summary */}
                             <div className="text-center text-sm text-muted-foreground pt-2">
-                                Showing {tableData.length} lessons for {getDayName(selectedDate)}
+                                Показано {tableData.length} занятий на {getDayName(selectedDate)}
                             </div>
                         </div>
                     )}

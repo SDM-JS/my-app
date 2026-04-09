@@ -1,3 +1,4 @@
+import logger from "@/lib/logger"
 import { prisma } from "@/lib/prisma"
 import { NextRequest, NextResponse } from "next/server"
 
@@ -7,10 +8,10 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
         const body = await request.json()
 
         if (!id) {
-            NextResponse.json({
-                error: "Source id is required!",
-                status: 400
-            })
+            return NextResponse.json(
+                { error: "Source id is required!" },
+                { status: 400 }
+            )
         }
         const source = await prisma.cameFrom.update({
             where: {
@@ -22,8 +23,11 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
         })
         return NextResponse.json(source);
     } catch (error) {
-        console.log(error)
-        NextResponse.json(error)
+        logger.error(`Error updating source: ${error}`);
+        return NextResponse.json(
+            { error: 'Failed to update source' },
+            { status: 500 }
+        );
     }
 }
 
@@ -32,10 +36,10 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
         const { id } = await params
 
         if (!id) {
-            NextResponse.json({
-                error: "Source id is required!",
-                status: 400
-            })
+            return NextResponse.json(
+                { error: "Source id is required!" },
+                { status: 400 }
+            )
         }
         await prisma.cameFrom.delete({
             where: {
@@ -44,7 +48,10 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
         })
         return NextResponse.json({ message: "Source deleted successfully!" })
     } catch (error) {
-        console.log(error)
-        return NextResponse.json(error)
+        logger.error(`Error deleting source: ${error}`);
+        return NextResponse.json(
+            { error: 'Failed to delete source' },
+            { status: 500 }
+        )
     }
 }

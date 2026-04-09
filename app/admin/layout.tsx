@@ -1,19 +1,10 @@
 import Sidebar from '@/app/components/layout/Sidebar';
 import Header from '@/app/components/layout/Header';
+import React from "react";
+import { requireRole } from '@/lib/auth';
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
-    // const { userId } = await auth()
-
-    // const admin = await prisma.admin.findFirst({
-    //     where: {
-    //         id: userId!
-    //     },
-    //     select: {
-    //         avatarUrl: true,
-    //         name: true,
-    //         email: true
-    //     }
-    // })
+    await requireRole("admin")
     return (
         <div className="min-h-screen bg-background">
             <Sidebar role="admin" />

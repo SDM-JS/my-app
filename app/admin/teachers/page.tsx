@@ -1,10 +1,17 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
+import {
+    ImageKitAbortError,
+    ImageKitInvalidRequestError,
+    ImageKitServerError,
+    ImageKitUploadNetworkError,
+    upload,
+} from '@imagekit/next';
 import DataTable from '@/app/components/DataTable';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Plus, Pencil, Trash2, Eye, Star, User, Upload, X } from 'lucide-react';
+import { Plus, Pencil, Trash2, Eye, Star, User, X, Upload, Loader2 } from 'lucide-react';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
@@ -15,19 +22,18 @@ import { toast } from 'sonner';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { axiosClient } from '@/lib/axiosClient';
 import { Teacher, Subject } from '@prisma/client';
-import { CldUploadWidget } from 'next-cloudinary';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { useUser } from '@clerk/nextjs';
 import { noAvatarURL } from '@/lib/constants';
 
+// Схема валидации Zod
 const teacherSchema = z.object({
-    name: z.string().min(2, 'Name must be at least 2 characters'),
-    phone: z.string().min(10, 'Phone number must be valid'),
-    password: z.string().min(8, 'Password must be at least 8 characters').optional(),
-    email: z.string().email('Invalid email address'),
-    birthday: z.string().min(1, 'Birthday is required'),
-    subjectIds: z.array(z.string()).min(1, 'At least one subject is required'),
+    name: z.string().min(2, 'ФИО должно содержать минимум 2 символа'),
+    phone: z.string().min(10, 'Введите корректный номер телефона'),
+    password: z.string().min(8, 'Пароль должен быть не менее 8 символов').optional(),
+    email: z.string().email('Некорректный адрес электронной почты'),
+    birthday: z.string().min(1, 'Дата рождения обязательна'),
+    subjectIds: z.array(z.string()).min(1, 'Выберите хотя бы один предмет'),
     avatarUrl: z.string().optional()
 });
 
@@ -39,10 +45,7 @@ type TeacherWithRelations = Teacher & {
 };
 
 export default function TeachersPage() {
-
-    const { user } = useUser()
-
-    // Fetch teachers data
+    // Получение данных учителей
     const { data: teachersData, isLoading, refetch } = useQuery({
         queryKey: ["teachers"],
         queryFn: async () => {
@@ -51,7 +54,7 @@ export default function TeachersPage() {
         },
     });
 
-    // Fetch subjects for dropdown
+    // Получение предметов для выбора
     const { data: subjects, isLoading: subjectsLoading } = useQuery({
         queryKey: ["subjects"],
         queryFn: async () => {
@@ -68,6 +71,10 @@ export default function TeachersPage() {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
     const [avatarUrl, setAvatarUrl] = useState<string>('');
+    const [avatarFileId, setAvatarFileId] = useState<string | null>(null);
+    const [uploadProgress, setUploadProgress] = useState(0);
+    const [isUploading, setIsUploading] = useState(false);
+    const avatarFileInputRef = useRef<HTMLInputElement>(null);
 
     useEffect(() => {
         if (teachersData) {
@@ -90,7 +97,6 @@ export default function TeachersPage() {
         }
     });
 
-    // Watch subjectIds to get current values
     const currentSubjectIds = watch('subjectIds');
     const currentAvatarUrl = watch('avatarUrl');
 
@@ -103,13 +109,12 @@ export default function TeachersPage() {
             setValue('email', teacher.email);
             setValue('avatarUrl', teacher.avatarUrl || '');
             setAvatarUrl(teacher.avatarUrl || '');
+            setAvatarFileId((teacher as { avatarFileId?: string | null }).avatarFileId ?? null);
 
-            // Only set password for create mode, not for edit/view
             if (mode === 'create') {
                 setValue('password', '');
             }
 
-            // Safely handle birthday date conversion
             const birthday = new Date(teacher.birthday);
             const formattedBirthday = isNaN(birthday.getTime())
                 ? ''
@@ -119,6 +124,7 @@ export default function TeachersPage() {
             setValue('subjectIds', teacher.subjects?.map(subject => subject.id) || []);
         } else {
             setAvatarUrl('');
+            setAvatarFileId(null);
             reset({
                 name: '',
                 phone: '',
@@ -141,6 +147,7 @@ export default function TeachersPage() {
         setIsDialogOpen(false);
         setSelectedTeacher(null);
         setAvatarUrl('');
+        setAvatarFileId(null);
         reset();
     };
 
@@ -149,7 +156,6 @@ export default function TeachersPage() {
         setSelectedTeacher(null);
     };
 
-    // Create teacher using API route
     const createTeacher = async (data: TeacherFormData) => {
         try {
             const response = await axiosClient.post('/api/teachers', {
@@ -158,16 +164,16 @@ export default function TeachersPage() {
                 email: data.email,
                 birthday: new Date(data.birthday),
                 subjectIds: data.subjectIds,
-                avatarUrl: avatarUrl || data.avatarUrl,
+                avatarUrl: avatarUrl || data.avatarUrl || '',
+                avatarFileId: avatarFileId ?? undefined,
                 password: data.password
             });
             return response.data;
         } catch (error: any) {
-            throw new Error(error.response?.data?.error || 'Failed to create teacher');
+            throw new Error(error.response?.data?.error || 'Не удалось создать преподавателя');
         }
     };
 
-    // Update teacher using API route
     const updateTeacher = async (id: string, data: TeacherFormData) => {
         try {
             const response = await axiosClient.put(`/api/teachers/${id}`, {
@@ -176,11 +182,12 @@ export default function TeachersPage() {
                 email: data.email,
                 birthday: new Date(data.birthday),
                 subjectIds: data.subjectIds,
-                avatarUrl: avatarUrl || data.avatarUrl,
+                avatarUrl: avatarUrl !== '' ? avatarUrl : (currentAvatarUrl || ''),
+                avatarFileId: avatarFileId ?? undefined,
             });
             return response.data;
         } catch (error: any) {
-            throw new Error(error.response?.data?.error || 'Failed to update teacher');
+            throw new Error(error.response?.data?.error || 'Не удалось обновить преподавателя');
         }
     };
 
@@ -188,21 +195,19 @@ export default function TeachersPage() {
         setIsSubmitting(true);
         try {
             if (viewMode === 'edit' && selectedTeacher) {
-                // Update teacher
                 await updateTeacher(selectedTeacher.id, data);
-                toast.success("Teacher updated successfully!");
-                refetch();
+                toast.success("Данные обновлены!");
+                await refetch();
                 closeDialog();
             } else if (viewMode === 'create') {
-                // Create new teacher
                 await createTeacher(data);
-                toast.success("Teacher created successfully!");
-                refetch();
+                toast.success("Преподаватель успешно добавлен!");
+                await refetch();
                 closeDialog();
             }
         } catch (error: any) {
-            console.error('Error submitting teacher:', error);
-            toast.error(error.message || "Failed to save teacher");
+            console.error('Ошибка:', error);
+            toast.error(error.message || "Не удалось сохранить изменения");
         } finally {
             setIsSubmitting(false);
         }
@@ -218,12 +223,12 @@ export default function TeachersPage() {
         mutationFn: async () => {
             await axiosClient.delete(`/api/teachers/${selectedTeacher?.id}`);
         },
-        onSuccess: () => {
-            // Update local state
+        onSuccess: async () => {
             setTeachers(teachers.filter((t) => t.id !== selectedTeacher?.id));
-            toast.success("Teacher deleted successfully!");
+            toast.success("Преподаватель удален!");
             closeDeleteDialog();
-        }
+            await refetch();
+        },
     })
 
     const handleSubjectChange = (subjectId: string) => {
@@ -236,13 +241,66 @@ export default function TeachersPage() {
 
     const removeAvatar = () => {
         setAvatarUrl('');
+        setAvatarFileId(null);
         setValue('avatarUrl', '');
+    };
+
+    const uploadAuthenticator = async () => {
+        const response = await fetch('/api/upload-auth');
+        if (!response.ok) {
+            const errorText = await response.text();
+            throw new Error(`Аутентификация загрузки не удалась: ${response.status} ${errorText}`);
+        }
+        return await response.json();
+    };
+
+    const handleAvatarUpload = async () => {
+        const fileInput = avatarFileInputRef.current;
+        if (!fileInput?.files?.length) {
+            fileInput?.click();
+            return;
+        }
+        const file = fileInput.files[0];
+        const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+        if (!allowedTypes.includes(file.type)) {
+            toast.error('Пожалуйста, выберите изображение (JPEG, PNG, WebP или GIF)');
+            return;
+        }
+        if (file.size > 5 * 1024 * 1024) {
+            toast.error('Размер изображения не должен превышать 5МБ');
+            return;
+        }
+        setIsUploading(true);
+        setUploadProgress(0);
+        try {
+            const authData = await uploadAuthenticator();
+            const uploadResponse = await upload({
+                ...authData,
+                file,
+                fileName: `teachers/${Date.now()}-${file.name.replace(/\s+/g, '-')}`,
+                responseFields: ['fileId', 'url'],
+                onProgress: (event) => setUploadProgress((event.loaded / event.total) * 100),
+            });
+            const res = uploadResponse as { url?: string; fileId?: string };
+            if (res.url) {
+                setAvatarUrl(res.url);
+                if (res.fileId) setAvatarFileId(res.fileId);
+                setValue('avatarUrl', res.url, { shouldValidate: true });
+                toast.success('Фото профиля загружено');
+            }
+        } catch (error) {
+            toast.error('Не удалось загрузить изображение');
+        } finally {
+            setIsUploading(false);
+            setUploadProgress(0);
+            fileInput.value = '';
+        }
     };
 
     const columns = [
         {
             key: 'name',
-            label: 'Name',
+            label: 'ФИО',
             sortable: true,
             render: (value: string, item: any) => {
                 return (
@@ -265,11 +323,11 @@ export default function TeachersPage() {
         },
         {
             key: 'subjects',
-            label: 'Subjects',
+            label: 'Предметы',
             sortable: true,
             render: (subjects: Subject[] | undefined) => {
                 if (!subjects || subjects.length === 0) {
-                    return <span className="text-muted-foreground">No subjects</span>;
+                    return <span className="text-muted-foreground">Нет предметов</span>;
                 }
                 return (
                     <div className="flex flex-wrap gap-1">
@@ -284,7 +342,7 @@ export default function TeachersPage() {
         },
         {
             key: 'phone',
-            label: 'Phone',
+            label: 'Телефон',
             sortable: false
         },
         {
@@ -294,7 +352,7 @@ export default function TeachersPage() {
         },
         {
             key: 'ratings',
-            label: 'Rating',
+            label: 'Рейтинг',
             sortable: true,
             render: (ratings: number | null) => (
                 <div className="flex items-center gap-1">
@@ -305,63 +363,29 @@ export default function TeachersPage() {
         },
         {
             key: 'birthday',
-            label: 'Birthday',
+            label: 'День рождения',
             sortable: true,
             render: (birthday: string | Date) => {
                 const date = new Date(birthday);
-                return isNaN(date.getTime()) ? 'Invalid date' : date.toLocaleDateString();
+                return isNaN(date.getTime()) ? 'Неверная дата' : date.toLocaleDateString('ru-RU');
             },
         },
     ];
 
-    // Loading state
     if (isLoading) {
-        return (
-            <div className="space-y-6">
-                <div className="flex items-center justify-between">
-                    <div className="space-y-1">
-                        <div className="h-8 w-48 bg-muted rounded-md animate-pulse"></div>
-                        <div className="h-4 w-64 bg-muted/50 rounded-md animate-pulse"></div>
-                    </div>
-                    <div className="h-9 w-28 bg-muted rounded-md animate-pulse"></div>
-                </div>
-
-                <div className="rounded-lg border bg-card">
-                    <div className="p-6">
-                        <div className="h-10 w-full bg-muted rounded-md animate-pulse mb-4"></div>
-                        <div className="space-y-3">
-                            {[...Array(5)].map((_, i) => (
-                                <div key={i} className="flex items-center justify-between p-4 border rounded-lg">
-                                    <div className="flex items-center gap-4">
-                                        <div className="h-12 w-12 bg-muted rounded-full animate-pulse"></div>
-                                        <div className="space-y-2">
-                                            <div className="h-4 w-40 bg-muted rounded animate-pulse"></div>
-                                            <div className="h-3 w-28 bg-muted/50 rounded animate-pulse"></div>
-                                        </div>
-                                    </div>
-                                    <div className="flex gap-2">
-                                        <div className="h-6 w-16 bg-muted rounded-full animate-pulse"></div>
-                                        <div className="h-6 w-20 bg-muted rounded-full animate-pulse"></div>
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-                </div>
-            </div>
-        );
+        return <div className="p-8 text-center text-muted-foreground">Загрузка данных преподавателей...</div>;
     }
 
     return (
         <div className="space-y-6">
             <div className="flex items-center justify-between">
                 <div>
-                    <h1 className="text-3xl font-bold">Teachers</h1>
-                    <p className="text-muted-foreground">Manage teaching staff ({teachers.length} total)</p>
+                    <h1 className="text-3xl font-bold">Преподаватели</h1>
+                    <p className="text-muted-foreground">Управление учебным персоналом (всего: {teachers.length})</p>
                 </div>
                 <Button className="gap-2" onClick={() => openDialog('create')}>
                     <Plus className="h-4 w-4" />
-                    Add Teacher
+                    Добавить преподавателя
                 </Button>
             </div>
 
@@ -370,13 +394,13 @@ export default function TeachersPage() {
                 data={teachers}
                 actions={(teacher) => (
                     <div className="flex items-center gap-1">
-                        <Button variant="ghost" size="icon" onClick={() => openDialog("view", teacher)}>
+                        <Button variant="ghost" size="icon" onClick={() => openDialog("view", teacher)} title="Просмотр">
                             <Eye className="h-4 w-4" />
                         </Button>
-                        <Button variant="ghost" size="icon" onClick={() => openDialog("edit", teacher)}>
+                        <Button variant="ghost" size="icon" onClick={() => openDialog("edit", teacher)} title="Редактировать">
                             <Pencil className="h-4 w-4" />
                         </Button>
-                        <Button variant="ghost" size="icon" onClick={() => openDeleteDialog(teacher)}>
+                        <Button variant="ghost" size="icon" onClick={() => openDeleteDialog(teacher)} title="Удалить">
                             <Trash2 className="h-4 w-4 text-destructive" />
                         </Button>
                     </div>
@@ -386,175 +410,110 @@ export default function TeachersPage() {
                         <div className="mx-auto h-12 w-12 text-muted-foreground mb-4">
                             <User className="h-12 w-12" />
                         </div>
-                        <h3 className="font-semibold text-lg mb-2">No teachers found</h3>
-                        <p className="text-muted-foreground mb-4">
-                            {searchTerm ? 'Try a different search term' : 'Get started by creating a new teacher'}
-                        </p>
-                        {!searchTerm && (
-                            <Button onClick={() => openDialog('create')}>
-                                <Plus className="h-4 w-4 mr-2" />
-                                Create Teacher
-                            </Button>
-
-                        )}
+                        <h3 className="font-semibold text-lg mb-2">Преподаватели не найдены</h3>
+                        <p className="text-muted-foreground mb-4">Начните работу, создав первую запись</p>
+                        <Button onClick={() => openDialog('create')}>
+                            <Plus className="h-4 w-4 mr-2" />
+                            Добавить преподавателя
+                        </Button>
                     </div>
                 }
             />
 
-            {/* Teacher Dialog */}
             <Dialog open={isDialogOpen} onOpenChange={closeDialog}>
                 <DialogContent className="max-w-lg max-h-[90vh] overflow-hidden p-0">
                     <DialogHeader className="px-6 pt-6">
                         <DialogTitle className="text-xl">
-                            {viewMode === 'create' ? 'Add New Teacher' : viewMode === 'edit' ? 'Edit Teacher' : 'Teacher Details'}
+                            {viewMode === 'create' ? 'Новый преподаватель' : viewMode === 'edit' ? 'Редактирование' : 'Информация'}
                         </DialogTitle>
                         <DialogDescription>
-                            {viewMode === 'create'
-                                ? 'Fill in the details to add a new teacher'
-                                : viewMode === 'edit'
-                                    ? 'Update teacher information'
-                                    : 'View teacher details'}
+                            {viewMode === 'create' ? 'Заполните данные для регистрации' : 'Обновите или просмотрите информацию'}
                         </DialogDescription>
                     </DialogHeader>
 
                     <ScrollArea className="max-h-[calc(90vh-200px)]">
                         <form onSubmit={handleSubmit(onSubmit)} className="space-y-6 px-6 pb-6">
-                            {/* Avatar Section */}
                             <div className="flex flex-col items-center gap-4">
+                                <input
+                                    type="file"
+                                    ref={avatarFileInputRef}
+                                    accept="image/*"
+                                    className="hidden"
+                                    onChange={handleAvatarUpload}
+                                />
                                 <div className="relative">
                                     <Avatar className="h-24 w-24 border-4 border-background shadow-lg">
-                                        <AvatarImage src={avatarUrl || currentAvatarUrl} />
+                                        {(avatarUrl || currentAvatarUrl) && <AvatarImage src={avatarUrl || currentAvatarUrl} />}
                                         <AvatarFallback className="text-2xl bg-primary/10">
                                             <User className="h-12 w-12" />
                                         </AvatarFallback>
                                     </Avatar>
                                     {avatarUrl && viewMode !== 'view' && (
-                                        <button
-                                            type="button"
-                                            onClick={removeAvatar}
-                                            className="absolute -top-2 -right-2 h-6 w-6 rounded-full bg-destructive text-destructive-foreground flex items-center justify-center hover:bg-destructive/90"
-                                        >
-                                            <X className="h-3 w-3" />
-                                        </button>
+                                        <button type="button" onClick={removeAvatar} className="absolute -top-2 -right-2 h-6 w-6 rounded-full bg-destructive text-white flex items-center justify-center"><X className="h-3 w-3" /></button>
                                     )}
                                 </div>
+                                {viewMode !== 'view' && (
+                                    <Button type="button" variant="outline" size="sm" onClick={() => avatarFileInputRef.current?.click()} disabled={isUploading}>
+                                        {isUploading ? `Загрузка ${Math.round(uploadProgress)}%` : 'Загрузить фото'}
+                                    </Button>
+                                )}
                             </div>
 
-                            {/* Form Grid */}
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div className="space-y-2">
-                                    <Label htmlFor="name">Full Name *</Label>
-                                    <Input
-                                        id="name"
-                                        {...register('name')}
-                                        disabled={viewMode === 'view' || isSubmitting}
-                                        placeholder="John Doe"
-                                    />
+                                    <Label>ФИО *</Label>
+                                    <Input {...register('name')} disabled={viewMode === 'view' || isSubmitting} placeholder="Иванов Иван Иванович" />
                                     {errors.name && <p className="text-xs text-destructive">{errors.name.message}</p>}
                                 </div>
-
                                 <div className="space-y-2">
-                                    <Label htmlFor="email">Email *</Label>
-                                    <Input
-                                        id="email"
-                                        type="email"
-                                        {...register('email')}
-                                        disabled={viewMode === 'view' || isSubmitting}
-                                        placeholder="john@example.com"
-                                    />
+                                    <Label>Email *</Label>
+                                    <Input type="email" {...register('email')} disabled={viewMode === 'view' || isSubmitting} placeholder="example@mail.ru" />
                                     {errors.email && <p className="text-xs text-destructive">{errors.email.message}</p>}
                                 </div>
-
                                 {viewMode === 'create' && (
                                     <div className="space-y-2">
-                                        <Label htmlFor="password">Password *</Label>
-                                        <Input
-                                            id="password"
-                                            type="password"
-                                            {...register('password')}
-                                            disabled={isSubmitting}
-                                            placeholder="••••••••"
-                                        />
-                                        {errors.password && <p className="text-xs text-destructive">{errors.password?.message}</p>}
+                                        <Label>Пароль *</Label>
+                                        <Input type="password" {...register('password')} disabled={isSubmitting} placeholder="••••••••" />
+                                        {errors.password && <p className="text-xs text-destructive">{errors.password.message}</p>}
                                     </div>
                                 )}
-
                                 <div className="space-y-2">
-                                    <Label htmlFor="phone">Phone *</Label>
-                                    <Input
-                                        id="phone"
-                                        {...register('phone')}
-                                        disabled={viewMode === 'view' || isSubmitting}
-                                        placeholder="+1 (555) 123-4567"
-                                    />
+                                    <Label>Телефон *</Label>
+                                    <Input {...register('phone')} disabled={viewMode === 'view' || isSubmitting} placeholder="+7 (999) 000-00-00" />
                                     {errors.phone && <p className="text-xs text-destructive">{errors.phone.message}</p>}
                                 </div>
-
                                 <div className="space-y-2">
-                                    <Label htmlFor="birthday">Birthday *</Label>
-                                    <Input
-                                        id="birthday"
-                                        type="date"
-                                        {...register('birthday')}
-                                        disabled={viewMode === 'view' || isSubmitting}
-                                    />
+                                    <Label>День рождения *</Label>
+                                    <Input type="date" {...register('birthday')} disabled={viewMode === 'view' || isSubmitting} />
                                     {errors.birthday && <p className="text-xs text-destructive">{errors.birthday.message}</p>}
                                 </div>
                             </div>
 
-                            {/* Subjects Section */}
                             <div className="space-y-3">
-                                <Label>Subjects *</Label>
-                                {subjectsLoading ? (
-                                    <div className="text-sm text-muted-foreground">Loading subjects...</div>
-                                ) : subjects && subjects.length > 0 ? (
-                                    <div className="grid grid-cols-2 gap-2 border rounded-lg p-3 max-h-48 overflow-y-auto">
-                                        {subjects.map((subject: any) => (
-                                            <div key={subject.id} className="flex items-center space-x-2">
-                                                <input
-                                                    type="checkbox"
-                                                    id={`subject-${subject.id}`}
-                                                    checked={currentSubjectIds.includes(subject.id)}
-                                                    onChange={() => handleSubjectChange(subject.id)}
-                                                    disabled={viewMode === 'view' || isSubmitting}
-                                                    className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
-                                                />
-                                                <label
-                                                    htmlFor={`subject-${subject.id}`}
-                                                    className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                                                >
-                                                    {subject.name}
-                                                </label>
-                                            </div>
-                                        ))}
-                                    </div>
-                                ) : (
-                                    <div className="text-sm text-muted-foreground border rounded-lg p-4 text-center">
-                                        No subjects available
-                                    </div>
-                                )}
+                                <Label>Предметы *</Label>
+                                <div className="grid grid-cols-2 gap-2 border rounded-lg p-3 max-h-48 overflow-y-auto">
+                                    {subjects?.map((subject: any) => (
+                                        <div key={subject.id} className="flex items-center space-x-2">
+                                            <input
+                                                type="checkbox"
+                                                id={`sub-${subject.id}`}
+                                                checked={currentSubjectIds.includes(subject.id)}
+                                                onChange={() => handleSubjectChange(subject.id)}
+                                                disabled={viewMode === 'view' || isSubmitting}
+                                                className="h-4 w-4 rounded border-gray-300 text-primary"
+                                            />
+                                            <Label htmlFor={`sub-${subject.id}`} className="text-sm font-normal">{subject.name}</Label>
+                                        </div>
+                                    ))}
+                                </div>
                                 {errors.subjectIds && <p className="text-xs text-destructive">{errors.subjectIds.message}</p>}
                             </div>
 
                             <DialogFooter className="pt-4 border-t">
-                                <Button
-                                    type="button"
-                                    variant="outline"
-                                    onClick={closeDialog}
-                                    disabled={isSubmitting}
-                                >
-                                    Cancel
-                                </Button>
+                                <Button type="button" variant="outline" onClick={closeDialog} disabled={isSubmitting}>Отмена</Button>
                                 {viewMode !== 'view' && (
                                     <Button type="submit" disabled={isSubmitting}>
-                                        {isSubmitting ? (
-                                            <div className="flex items-center gap-2">
-                                                <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
-                                                {viewMode === 'create' ? 'Creating...' : 'Saving...'}
-                                            </div>
-                                        ) : (
-                                            viewMode === 'create' ? 'Create Teacher' : 'Save Changes'
-                                        )}
+                                        {isSubmitting ? 'Сохранение...' : (viewMode === 'create' ? 'Создать' : 'Сохранить')}
                                     </Button>
                                 )}
                             </DialogFooter>
@@ -563,41 +522,21 @@ export default function TeachersPage() {
                 </DialogContent>
             </Dialog>
 
-            {/* Delete Confirmation Dialog */}
             <Dialog open={isDeleteDialogOpen} onOpenChange={closeDeleteDialog}>
                 <DialogContent className="max-w-md">
                     <DialogHeader>
                         <DialogTitle className="text-destructive flex items-center gap-2">
                             <Trash2 className="h-5 w-5" />
-                            Delete Teacher
+                            Удаление преподавателя
                         </DialogTitle>
-                        <DialogDescription className="pt-2">
-                            Are you sure you want to delete <strong>{selectedTeacher?.name}</strong>?
-                            This action cannot be undone and all associated data will be permanently removed.
+                        <DialogDescription>
+                            Вы уверены, что хотите удалить <strong>{selectedTeacher?.name}</strong>? Это действие нельзя отменить.
                         </DialogDescription>
                     </DialogHeader>
-                    <DialogFooter className="gap-2">
-                        <Button type="button" variant="outline" onClick={closeDeleteDialog}>
-                            Cancel
-                        </Button>
-                        <Button
-                            type="button"
-                            variant="destructive"
-                            onClick={handleDelete}
-                            disabled={deleteTeacher.isPending}
-                            className="gap-2"
-                        >
-                            {deleteTeacher.isPending ? (
-                                <div className="flex items-center gap-2">
-                                    <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
-                                    Deleting...
-                                </div>
-                            ) : (
-                                <>
-                                    <Trash2 className="h-4 w-4" />
-                                    Delete Teacher
-                                </>
-                            )}
+                    <DialogFooter>
+                        <Button variant="outline" onClick={closeDeleteDialog} disabled={deleteTeacher.isPending}>Отмена</Button>
+                        <Button variant="destructive" onClick={handleDelete} disabled={deleteTeacher.isPending}>
+                            {deleteTeacher.isPending ? "Удаление..." : "Удалить преподавателя"}
                         </Button>
                     </DialogFooter>
                 </DialogContent>

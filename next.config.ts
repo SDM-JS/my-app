@@ -9,5 +9,5 @@ const nextConfig: NextConfig = {
             }
         ]
     },
-    allowedDevOrigins: ["http://192.168.123.111"]
+    output: 'standalone',
 };

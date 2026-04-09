@@ -1,3 +1,4 @@
+import logger from "@/lib/logger";
 import { prisma } from "@/lib/prisma";
 import { NextRequest, NextResponse } from "next/server";
 
@@ -6,6 +7,7 @@ export const GET = async () => {
         const cameFrom = await prisma.cameFrom.findMany()
         return NextResponse.json(cameFrom)
     } catch (error) {
+        logger.error("Error fetching came froms. \n" + error)
         return NextResponse.json("Error fetching came froms. \n" + error)
     }
 }
@@ -20,6 +22,7 @@ export const POST = async (req: NextRequest) => {
         })
         return NextResponse.json({ success: true, error: false })
     } catch (error) {
+        logger.error("Error creating came froms. \n" + error)
         return NextResponse.json({ errors: "Error creating came froms. \n" + error, success: true, error: false })
 
     }

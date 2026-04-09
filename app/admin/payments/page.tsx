@@ -27,10 +27,10 @@ import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover
 import { ScrollArea } from '@/components/ui/scroll-area';
 
 const paymentSchema = z.object({
-    studentId: z.string().min(1, 'Student is required'),
-    amount: z.number().min(1, 'Amount must be greater than 0'),
+    studentId: z.string().min(1, 'Выберите студента'),
+    amount: z.number().min(1, 'Сумма должна быть больше 0'),
     date: z.date({
-        error: "Date is required",
+        error: "Выберите дату",
     }),
     desc: z.string().optional(),
     groupId: z.string().optional().nullable()
@@ -71,8 +71,6 @@ export default function PaymentsPage() {
         },
     });
 
-    console.log(payments)
-
     const { data: students } = useQuery({
         queryKey: ["students"],
         queryFn: async () => {
@@ -97,7 +95,6 @@ export default function PaymentsPage() {
 
     const createPaymentMutation = useMutation({
         mutationFn: async (data: PaymentFormData) => {
-            console.log(data)
             const response = await axiosClient.post('/api/payments', {
                 studentId: data.studentId,
                 date: data.date,
@@ -108,15 +105,15 @@ export default function PaymentsPage() {
             return response.data;
         },
         onSuccess: () => {
-            toast.success('Payment Added', {
-                description: 'Payment has been recorded successfully.',
+            toast.success('Платеж добавлен', {
+                description: 'Данные о платеже успешно сохранены.',
             });
             refetch()
             closeDialog();
         },
         onError: (error: any) => {
-            toast.error('Failed to add payment', {
-                description: error.response?.data?.error || 'Please try again.',
+            toast.error('Ошибка добавления платежа', {
+                description: error.response?.data?.error || 'Пожалуйста, попробуйте еще раз.',
             });
         },
     });
@@ -141,16 +138,16 @@ export default function PaymentsPage() {
             return response.data;
         },
         onSuccess: () => {
-            toast.success('Payment Updated', {
-                description: 'Payment has been updated successfully.',
+            toast.success('Платеж обновлен', {
+                description: 'Данные о платеже успешно обновлены.',
             });
             queryClient.invalidateQueries({ queryKey: ['payments'] });
             refetch()
             closeDialog();
         },
         onError: (error: any) => {
-            toast.error('Failed to update payment', {
-                description: error.response?.data?.error || 'Please try again.',
+            toast.error('Ошибка обновления', {
+                description: error.response?.data?.error || 'Пожалуйста, попробуйте еще раз.',
             });
         },
     });
@@ -160,20 +157,19 @@ export default function PaymentsPage() {
             await axiosClient.delete(`/api/payments/${id}`);
         },
         onSuccess: () => {
-            toast.success('Payment Deleted', {
-                description: 'Payment has been deleted successfully.',
+            toast.success('Платеж удален', {
+                description: 'Запись о платеже была успешно удалена.',
             });
             queryClient.invalidateQueries({ queryKey: ['payments'] });
             closeDeleteDialog();
         },
         onError: (error: any) => {
-            const errorMessage = error.response?.data?.error || "Failed to delete payment";
+            const errorMessage = error.response?.data?.error || "Не удалось удалить платеж";
             toast.error(errorMessage);
 
-            // If it's a "not found" error, invalidate queries anyway
             if (error.response?.status === 404) {
                 queryClient.invalidateQueries({ queryKey: ['payments'] });
-                toast.info("Payment was already removed");
+                toast.info("Платеж уже был удален");
                 closeDeleteDialog();
             }
         },
@@ -187,7 +183,7 @@ export default function PaymentsPage() {
     };
     const handleClearStudent = () => {
         setSelectedStudent(null);
-        setValue('studentId', "student.id");
+        setValue('studentId', "");
         trigger('studentId');
     };
 
@@ -230,10 +226,8 @@ export default function PaymentsPage() {
 
     const onSubmit = async (data: PaymentFormData) => {
         if (viewMode === 'edit' && selectedPayment) {
-            // Update payment
             updatePaymentMutation.mutate({ id: selectedPayment.id, data });
         } else if (viewMode === 'create') {
-            // Create payment
             createPaymentMutation.mutate(data);
         }
     };
@@ -246,7 +240,7 @@ export default function PaymentsPage() {
 
     const formatDate = (date: Date | string) => {
         const dateObj = typeof date === 'string' ? new Date(date) : date;
-        return dateObj.toLocaleDateString('en-US', {
+        return dateObj.toLocaleDateString('ru-RU', {
             year: 'numeric',
             month: 'short',
             day: 'numeric',
@@ -254,23 +248,23 @@ export default function PaymentsPage() {
     };
 
     const columns = [
-        { key: 'studentName', label: 'Student', sortable: true },
+        { key: 'studentName', label: 'Студент', sortable: true },
         {
             key: 'amount',
-            label: 'Amount',
+            label: 'Сумма',
             sortable: true,
-            render: (value: number) => <span className="font-medium">${value.toLocaleString()}</span>,
+            render: (value: number) => <span className="font-medium">{value.toLocaleString()} ₽</span>,
         },
         {
             key: 'group',
-            label: 'Group',
+            label: 'Группа',
             sortable: true,
             render: (group: Groups | null | undefined) =>
-                group?.name || <span className="text-muted-foreground">No group</span>
+                group?.name || <span className="text-muted-foreground">Без группы</span>
         },
         {
             key: 'date',
-            label: 'Date',
+            label: 'Дата',
             sortable: true,
             render: (value: Date) => formatDate(value)
         },
@@ -286,7 +280,6 @@ export default function PaymentsPage() {
                     </div>
                     <div className="h-9 w-28 bg-muted rounded-md animate-pulse"></div>
                 </div>
-
                 <div className="rounded-lg border bg-card">
                     <div className="p-6">
                         <div className="h-10 w-full bg-muted rounded-md animate-pulse mb-4"></div>
@@ -317,8 +310,8 @@ export default function PaymentsPage() {
         <div className="space-y-6">
             <div className="flex items-center justify-between">
                 <div>
-                    <h1 className="text-3xl font-bold">Payments</h1>
-                    <p className="text-muted-foreground">Track all payment transactions</p>
+                    <h1 className="text-3xl font-bold">Платежи</h1>
+                    <p className="text-muted-foreground">Отслеживание всех транзакций</p>
                 </div>
                 <Button
                     className="gap-2"
@@ -326,7 +319,7 @@ export default function PaymentsPage() {
                     disabled={isLoadingGroups}
                 >
                     <Plus className="h-4 w-4" />
-                    Add Payment
+                    Добавить платеж
                 </Button>
             </div>
 
@@ -363,19 +356,18 @@ export default function PaymentsPage() {
             )}
 
 
-            {/* Payment Dialog */}
             <Dialog open={isDialogOpen} onOpenChange={closeDialog}>
                 <DialogContent className="max-w-md">
                     <DialogHeader>
                         <DialogTitle>
-                            {viewMode === 'create' ? 'Add New Payment' : viewMode === 'edit' ? 'Edit Payment' : 'View Payment'}
+                            {viewMode === 'create' ? 'Добавить новый платеж' : viewMode === 'edit' ? 'Редактировать платеж' : 'Просмотр платежа'}
                         </DialogTitle>
                         <DialogDescription>
                             {viewMode === 'create'
-                                ? 'Record a new payment transaction'
+                                ? 'Зафиксируйте новую платежную операцию'
                                 : viewMode === 'edit'
-                                    ? 'Update payment information'
-                                    : 'Payment details'}
+                                    ? 'Обновите информацию о платеже'
+                                    : 'Детали платежа'}
                         </DialogDescription>
                     </DialogHeader>
                     <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
@@ -395,20 +387,20 @@ export default function PaymentsPage() {
                                                 </div>
                                                 {viewMode !== 'view' && (
                                                     <div
-                                                        className="h-6 w-6 hover:bg-accent hover:text-accent-foreground inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-smooth focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0"
+                                                        className="h-6 w-6 hover:bg-accent hover:text-accent-foreground inline-flex items-center justify-center rounded-md"
                                                         onClick={(e) => {
                                                             e.stopPropagation();
                                                             handleClearStudent();
                                                         }}
                                                     >
-                                                        <X className="h-3 w-3 hover:bg-accent hover:text-accent-foreground" />
+                                                        <X className="h-3 w-3" />
                                                     </div>
                                                 )}
                                             </div>
                                         ) : (
                                             <div className="flex items-center gap-2 text-muted-foreground">
                                                 <User className="h-4 w-4" />
-                                                <span>Select a student</span>
+                                                <span>Выберите студента</span>
                                             </div>
                                         )}
                                     </Button>
@@ -418,7 +410,7 @@ export default function PaymentsPage() {
                                         <div className="relative">
                                             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2" />
                                             <Input
-                                                placeholder="Search students..."
+                                                placeholder="Поиск студентов..."
                                                 value={studentSearch}
                                                 onChange={(e) => setStudentSearch(e.target.value)}
                                                 className="pl-10"
@@ -454,7 +446,7 @@ export default function PaymentsPage() {
                                         ) : (
                                             <div className="py-6 text-center">
                                                 <p className="text-sm text-muted-foreground">
-                                                    {studentSearch ? 'No students found' : 'No students available'}
+                                                    {studentSearch ? 'Студенты не найдены' : 'Нет доступных студентов'}
                                                 </p>
                                             </div>
                                         )}
@@ -466,7 +458,7 @@ export default function PaymentsPage() {
                         </div>
 
                         <div className="space-y-2">
-                            <Label htmlFor="amount">Amount ($)</Label>
+                            <Label htmlFor="amount">Сумма (₽)</Label>
                             <Input
                                 id="amount"
                                 type="number"
@@ -479,7 +471,7 @@ export default function PaymentsPage() {
                         </div>
 
                         <div className="space-y-2">
-                            <Label htmlFor="date">Payment Date</Label>
+                            <Label htmlFor="date">Дата платежа</Label>
                             <Input
                                 id="date"
                                 type="date"
@@ -491,14 +483,14 @@ export default function PaymentsPage() {
                         </div>
 
                         <div className="space-y-2">
-                            <Label htmlFor="groupId">Group (Optional)</Label>
+                            <Label htmlFor="groupId">Группа (опционально)</Label>
                             <select
                                 id="groupId"
                                 {...register('groupId')}
                                 disabled={viewMode === 'view' || createPaymentMutation.isPending || updatePaymentMutation.isPending || isLoadingGroups}
-                                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
                             >
-                                <option value="">No group</option>
+                                <option value="">Без группы</option>
                                 {groups?.map((group: Groups) => (
                                     <option key={group.id} value={group.id}>
                                         {group.name}
@@ -511,13 +503,13 @@ export default function PaymentsPage() {
                         </div>
 
                         <div className="space-y-2">
-                            <Label htmlFor="desc">Description (Optional)</Label>
+                            <Label htmlFor="desc">Описание (опционально)</Label>
                             <Textarea
                                 id="desc"
                                 {...register('desc')}
                                 disabled={viewMode === 'view' || createPaymentMutation.isPending || updatePaymentMutation.isPending}
                                 rows={3}
-                                placeholder="Add any additional notes about this payment"
+                                placeholder="Добавьте примечания к платежу"
                             />
                         </div>
 
@@ -528,7 +520,7 @@ export default function PaymentsPage() {
                                 onClick={closeDialog}
                                 disabled={createPaymentMutation.isPending || updatePaymentMutation.isPending}
                             >
-                                Cancel
+                                Отмена
                             </Button>
                             {viewMode !== 'view' && (
                                 <Button
@@ -538,10 +530,10 @@ export default function PaymentsPage() {
                                     {(createPaymentMutation.isPending || updatePaymentMutation.isPending) ? (
                                         <>
                                             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                            {viewMode === 'create' ? 'Adding...' : 'Saving...'}
+                                            {viewMode === 'create' ? 'Добавление...' : 'Сохранение...'}
                                         </>
                                     ) : (
-                                        viewMode === 'create' ? 'Add Payment' : 'Save Changes'
+                                        viewMode === 'create' ? 'Добавить платеж' : 'Сохранить изменения'
                                     )}
                                 </Button>
                             )}
@@ -550,14 +542,13 @@ export default function PaymentsPage() {
                 </DialogContent>
             </Dialog>
 
-            {/* Delete Confirmation Dialog */}
             <Dialog open={isDeleteDialogOpen} onOpenChange={closeDeleteDialog}>
                 <DialogContent className="max-w-md">
                     <DialogHeader>
-                        <DialogTitle>Delete Payment</DialogTitle>
+                        <DialogTitle>Удалить платеж</DialogTitle>
                         <DialogDescription>
-                            Are you sure you want to delete the payment record for {selectedPayment?.student?.name || 'this payment'}?
-                            This action cannot be undone.
+                            Вы уверены, что хотите удалить запись о платеже для {selectedPayment?.student?.name || 'этого студента'}?
+                            Это действие нельзя будет отменить.
                         </DialogDescription>
                     </DialogHeader>
                     <DialogFooter>
@@ -567,7 +558,7 @@ export default function PaymentsPage() {
                             onClick={closeDeleteDialog}
                             disabled={deletePaymentMutation.isPending}
                         >
-                            Cancel
+                            Отмена
                         </Button>
                         <Button
                             type="button"
@@ -578,10 +569,10 @@ export default function PaymentsPage() {
                             {deletePaymentMutation.isPending ? (
                                 <>
                                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                    Deleting...
+                                    Удаление...
                                 </>
                             ) : (
-                                'Delete Payment'
+                                'Удалить платеж'
                             )}
                         </Button>
                     </DialogFooter>

@@ -3,7 +3,7 @@
 import { useMemo, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import DataTable from '@/app/components/DataTable';
-import { Plus, Eye, Pencil, Trash2, Calendar, Clock, Users, MapPin, X, Search, ChevronLeft, ChevronRight, User, Check, XCircle } from 'lucide-react';
+import { Plus, Eye, Pencil, Trash2, Calendar, Clock, Users, MapPin, ChevronLeft, ChevronRight, Check, } from 'lucide-react';
 import {
     Dialog,
     DialogContent,
@@ -21,15 +21,24 @@ import { toast } from 'sonner';
 import { Textarea } from '@/components/ui/textarea';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { axiosClient } from '@/lib/axiosClient';
-import { Lessons, Groups, Teacher, DaysOfWeek } from '@prisma/client';
+import type { Lessons, Groups, Teacher, $Enums } from '@prisma/client';
+
+type DaysOfWeek = $Enums.DaysOfWeek;
+
+const DaysOfWeek = {
+    Monday: 'Monday' as DaysOfWeek,
+    Tuesday: 'Tuesday' as DaysOfWeek,
+    Wednesday: 'Wednesday' as DaysOfWeek,
+    Thursday: 'Thursday' as DaysOfWeek,
+    Friday: 'Friday' as DaysOfWeek,
+    Saturday: 'Saturday' as DaysOfWeek,
+};
 import { Loader2 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { format, parseISO, startOfWeek, endOfWeek, eachDayOfInterval, isSameDay, addDays } from 'date-fns';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { format, startOfWeek, endOfWeek, eachDayOfInterval, isSameDay, addDays } from 'date-fns';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Checkbox } from '@/components/ui/checkbox';
 
 const lessonSchema = z.object({
     groupId: z.string().min(1, 'Group is required'),
@@ -83,23 +92,23 @@ export default function LessonsPage() {
         }
     };
 
-    const { data: groups, isLoading: isLoadingGroups } = useQuery({
+    const {data: groups, isLoading: isLoadingGroups} = useQuery({
         queryKey: ["groups"],
         queryFn: async () => {
-            const { data } = await axiosClient.get("/api/groups")
+            const {data} = await axiosClient.get("/api/groups")
             return data
         },
     });
 
-    const { data: teachers, isLoading: isLoadingTeachers } = useQuery({
+    const {data: teachers, isLoading: isLoadingTeachers} = useQuery({
         queryKey: ["teachers"],
         queryFn: async () => {
-            const { data } = await axiosClient.get("/api/teachers")
+            const {data} = await axiosClient.get("/api/teachers")
             return data
         },
     });
 
-    const { data: lessonsData, isLoading, refetch } = useQuery({
+    const {data: lessonsData, isLoading} = useQuery({
         queryKey: ["lessons", selectedDate.toISOString().split('T')[0]],
         queryFn: async () => {
             // Handle Sunday - show Monday instead
@@ -109,7 +118,7 @@ export default function LessonsPage() {
                 queryDate.setDate(queryDate.getDate() + 1);
             }
 
-            const { data } = await axiosClient.get("/api/lessons/date", {
+            const {data} = await axiosClient.get("/api/lessons/date", {
                 params: {
                     date: queryDate.toISOString().split('T')[0]
                 }
@@ -118,15 +127,13 @@ export default function LessonsPage() {
         },
     });
 
-    console.log(lessonsData)
-
     const {
         register,
         handleSubmit,
         reset,
         setValue,
         watch,
-        formState: { errors },
+        formState: {errors},
     } = useForm<LessonFormData>({
         resolver: zodResolver(lessonSchema),
         defaultValues: {
@@ -135,7 +142,6 @@ export default function LessonsPage() {
     });
 
     const startTimeValue = watch('startTime');
-    const endTimeValue = watch('endTime');
     const daysOfWeekValue = watch('daysOfWeek') || [];
 
     const createLessonMutation = useMutation({
@@ -151,7 +157,7 @@ export default function LessonsPage() {
             toast.success('Lesson Created', {
                 description: 'Lesson has been created successfully.',
             });
-            queryClient.invalidateQueries({ queryKey: ['lessons'] });
+            queryClient.invalidateQueries({queryKey: ['lessons']});
             closeDialog();
         },
         onError: (error: any) => {
@@ -162,7 +168,7 @@ export default function LessonsPage() {
     });
 
     const updateLessonMutation = useMutation({
-        mutationFn: async ({ id, data }: { id: string, data: LessonFormData }) => {
+        mutationFn: async ({id, data}: { id: string, data: LessonFormData }) => {
             const response = await axiosClient.put(`/api/lessons/${id}`, {
                 ...data,
                 startTime: new Date(data.startTime).toISOString(),
@@ -174,7 +180,7 @@ export default function LessonsPage() {
             toast.success('Lesson Updated', {
                 description: 'Lesson has been updated successfully.',
             });
-            queryClient.invalidateQueries({ queryKey: ['lessons'] });
+            queryClient.invalidateQueries({queryKey: ['lessons']});
             closeDialog();
         },
         onError: (error: any) => {
@@ -192,7 +198,7 @@ export default function LessonsPage() {
             toast.success('Lesson Deleted', {
                 description: 'Lesson has been deleted successfully.',
             });
-            queryClient.invalidateQueries({ queryKey: ['lessons'] });
+            queryClient.invalidateQueries({queryKey: ['lessons']});
             closeDeleteDialog();
         },
         onError: (error: any) => {
@@ -206,14 +212,14 @@ export default function LessonsPage() {
         setViewMode(mode);
         if (lesson) {
             setSelectedLesson(lesson);
-            setSelectedDays(lesson.daysOfWeek);
+            setSelectedDays(lesson.daysOfWeek as unknown as DaysOfWeek[]);
             setValue('groupId', lesson.groupId || '');
             setValue('teacherId', lesson.teacherId || '');
             setValue('startTime', format(lesson.startTime, "yyyy-MM-dd'T'HH:mm"));
             setValue('endTime', format(lesson.endTime, "yyyy-MM-dd'T'HH:mm"));
             setValue('room', lesson.room);
             setValue('desc', lesson.desc || '');
-            setValue('daysOfWeek', lesson.daysOfWeek);
+            setValue('daysOfWeek', lesson.daysOfWeek as unknown as DaysOfWeek[]);
         } else {
             setSelectedDays([]);
             reset({
@@ -248,7 +254,7 @@ export default function LessonsPage() {
 
     const onSubmit = async (data: LessonFormData) => {
         if (viewMode === 'edit' && selectedLesson) {
-            updateLessonMutation.mutate({ id: selectedLesson.id, data });
+            updateLessonMutation.mutate({id: selectedLesson.id, data});
         } else if (viewMode === 'create') {
             createLessonMutation.mutate(data);
         }
@@ -277,8 +283,14 @@ export default function LessonsPage() {
             [DaysOfWeek.Thursday]: 'bg-yellow-500 hover:bg-yellow-600',
             [DaysOfWeek.Friday]: 'bg-orange-500 hover:bg-orange-600',
             [DaysOfWeek.Saturday]: 'bg-red-500 hover:bg-red-600',
+            Monday: '',
+            Tuesday: '',
+            Wednesday: '',
+            Thursday: '',
+            Friday: '',
+            Saturday: ''
         };
-        return colors[day] || 'bg-gray-500';
+        return colors[day] || 'bg-muted';
     };
 
     const columns = [
@@ -286,7 +298,7 @@ export default function LessonsPage() {
             key: 'group',
             label: 'Group',
             sortable: true,
-            render: (value: any, lesson: LessonsWithRelations) => {
+            render: (lesson: LessonsWithRelations) => {
                 // 'value' here is lesson.group (the group object)
                 // 'lesson' is the entire lesson object
                 return lesson.group?.name || 'No group';
@@ -296,7 +308,7 @@ export default function LessonsPage() {
             key: 'teacher',
             label: 'Teacher',
             sortable: true,
-            render: (value: any, lesson: LessonsWithRelations) => {
+            render: (lesson: LessonsWithRelations) => {
                 // 'value' here is lesson.teacher (the teacher object)
                 return lesson.teacher?.name || 'No teacher';
             }
@@ -305,10 +317,10 @@ export default function LessonsPage() {
             key: 'daysOfWeek', // This should match the property name in the data
             label: 'Days',
             sortable: false,
-            render: (value: any, lesson: LessonsWithRelations) => {
+            render: (lesson: LessonsWithRelations) => {
                 // 'value' here is lesson.daysOfWeek (the array of days)
                 // But for safety, we can also use the lesson parameter
-                const daysOfWeek = lesson.daysOfWeek || value || [];
+                const daysOfWeek = lesson.daysOfWeek || [];
 
                 if (!Array.isArray(daysOfWeek) || daysOfWeek.length === 0) {
                     return <Badge variant="default" className="text-xs">No days</Badge>;
@@ -334,7 +346,7 @@ export default function LessonsPage() {
             sortable: true,
             render: (value: any, lesson: LessonsWithRelations) => (
                 <div className="flex items-center gap-1">
-                    <Clock className="h-3 w-3" />
+                    <Clock className="h-3 w-3"/>
                     <span>{format(lesson.startTime, 'HH:mm')} - {format(lesson.endTime, 'HH:mm')}</span>
                 </div>
             )
@@ -345,7 +357,7 @@ export default function LessonsPage() {
             sortable: true,
             render: (value: any, lesson: LessonsWithRelations) => (
                 <div className="flex items-center gap-1">
-                    <MapPin className="h-3 w-3" />
+                    <MapPin className="h-3 w-3"/>
                     <span>{lesson.room}</span>
                 </div>
             )
@@ -356,7 +368,7 @@ export default function LessonsPage() {
             sortable: false,
             render: (value: any, lesson: LessonsWithRelations) => (
                 <div className="flex items-center gap-1">
-                    <Users className="h-3 w-3" />
+                    <Users className="h-3 w-3"/>
                     <span>{lesson.group?.students?.length || 0}</span>
                 </div>
             )
@@ -364,9 +376,9 @@ export default function LessonsPage() {
     ];
 
     const weekDays = useMemo(() => {
-        const start = startOfWeek(selectedDate, { weekStartsOn: 1 });
-        const end = endOfWeek(selectedDate, { weekStartsOn: 1 });
-        return eachDayOfInterval({ start, end });
+        const start = startOfWeek(selectedDate, {weekStartsOn: 1});
+        const end = endOfWeek(selectedDate, {weekStartsOn: 1});
+        return eachDayOfInterval({start, end});
     }, [selectedDate]);
 
     const lessons = lessonsData?.lessons || [];
@@ -435,7 +447,7 @@ export default function LessonsPage() {
                 </div>
                 <div className="flex items-center gap-4">
                     <div className="flex items-center gap-2">
-                        <Calendar className="h-4 w-4" />
+                        <Calendar className="h-4 w-4"/>
                         <span className="text-sm font-medium">
                             {format(selectedDate, 'EEEE, MMMM d, yyyy')}
                         </span>
@@ -445,13 +457,14 @@ export default function LessonsPage() {
                         onClick={() => openDialog('create')}
                         disabled={isLoadingGroups || isLoadingTeachers}
                     >
-                        <Plus className="h-4 w-4" />
+                        <Plus className="h-4 w-4"/>
                         Create Lesson
                     </Button>
                 </div>
             </div>
 
-            <Tabs defaultValue="table" value={viewModeType} onValueChange={(v) => setViewModeType(v as 'table' | 'calendar')}>
+            <Tabs defaultValue="table" value={viewModeType}
+                  onValueChange={(v) => setViewModeType(v as 'table' | 'calendar')}>
                 <TabsList>
                     <TabsTrigger value="table">Table View</TabsTrigger>
                     <TabsTrigger value="calendar">Calendar View</TabsTrigger>
@@ -475,14 +488,14 @@ export default function LessonsPage() {
                                         size="icon"
                                         onClick={() => handleDateChange(new Date(selectedDate.setDate(selectedDate.getDate() - 1)))}
                                     >
-                                        <ChevronLeft className="h-4 w-4" />
+                                        <ChevronLeft className="h-4 w-4"/>
                                     </Button>
                                     <Button
                                         variant="outline"
                                         size="icon"
                                         onClick={() => handleDateChange(new Date(selectedDate.setDate(selectedDate.getDate() + 1)))}
                                     >
-                                        <ChevronRight className="h-4 w-4" />
+                                        <ChevronRight className="h-4 w-4"/>
                                     </Button>
                                     {selectedDate.getDay() === 1 && (
                                         <Badge variant="outline" className="ml-2">
@@ -495,12 +508,12 @@ export default function LessonsPage() {
                         <CardContent>
                             {isLoading ? (
                                 <div className="flex items-center justify-center p-8">
-                                    <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                                    <Loader2 className="h-8 w-8 animate-spin text-primary"/>
                                     <span className="ml-2">Loading lessons...</span>
                                 </div>
                             ) : lessons.length === 0 ? (
                                 <div className="text-center p-8">
-                                    <Calendar className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
+                                    <Calendar className="h-12 w-12 text-muted-foreground mx-auto mb-3"/>
                                     <p className="text-muted-foreground">No lessons scheduled for this day</p>
                                 </div>
                             ) : (
@@ -515,7 +528,7 @@ export default function LessonsPage() {
                                                 onClick={() => openDialog('view', lesson as LessonsWithRelations)}
                                                 title="View details"
                                             >
-                                                <Eye className="h-4 w-4" />
+                                                <Eye className="h-4 w-4"/>
                                             </Button>
                                             <Button
                                                 variant="ghost"
@@ -523,7 +536,7 @@ export default function LessonsPage() {
                                                 onClick={() => openDialog('edit', lesson as LessonsWithRelations)}
                                                 title="Edit"
                                             >
-                                                <Pencil className="h-4 w-4" />
+                                                <Pencil className="h-4 w-4"/>
                                             </Button>
                                             <Button
                                                 variant="ghost"
@@ -531,7 +544,7 @@ export default function LessonsPage() {
                                                 onClick={() => openDeleteDialog(lesson as LessonsWithRelations)}
                                                 title="Delete"
                                             >
-                                                <Trash2 className="h-4 w-4 text-destructive" />
+                                                <Trash2 className="h-4 w-4 text-destructive"/>
                                             </Button>
                                         </div>
                                     )}
@@ -564,10 +577,10 @@ export default function LessonsPage() {
                                                 return newDate;
                                             })}
                                         >
-                                            <ChevronLeft className="h-4 w-4" />
+                                            <ChevronLeft className="h-4 w-4"/>
                                         </Button>
                                         <span className="font-medium">
-                                            Week {format(startOfWeek(selectedDate, { weekStartsOn: 1 }), 'w')}
+                                            Week {format(startOfWeek(selectedDate, {weekStartsOn: 1}), 'w')}
                                         </span>
                                         <Button
                                             variant="outline"
@@ -578,7 +591,7 @@ export default function LessonsPage() {
                                                 return newDate;
                                             })}
                                         >
-                                            <ChevronRight className="h-4 w-4" />
+                                            <ChevronRight className="h-4 w-4"/>
                                         </Button>
                                     </div>
                                 </div>
@@ -592,9 +605,11 @@ export default function LessonsPage() {
                                         className={`space-y-2 p-2 rounded-lg ${isSameDay(day, selectedDate) ? 'bg-accent' : ''}`}
                                         onClick={() => handleDateChange(day)}
                                     >
-                                        <div className={`text-center font-medium ${isSameDay(day, new Date()) ? 'text-primary' : ''}`}>
+                                        <div
+                                            className={`text-center font-medium ${isSameDay(day, new Date()) ? 'text-primary' : ''}`}>
                                             <div>{format(day, 'EEE')}</div>
-                                            <div className={`text-lg ${isSameDay(day, new Date()) ? 'bg-primary text-primary-foreground rounded-full w-8 h-8 flex items-center justify-center mx-auto' : ''}`}>
+                                            <div
+                                                className={`text-lg ${isSameDay(day, new Date()) ? 'bg-primary text-primary-foreground rounded-full w-8 h-8 flex items-center justify-center mx-auto' : ''}`}>
                                                 {format(day, 'd')}
                                             </div>
                                             {day.getDay() === 0 && (
@@ -667,7 +682,8 @@ export default function LessonsPage() {
                                     <option value="">Select a group</option>
                                     {groups?.map((group: Groups & { course?: any; students?: any[] }) => (
                                         <option key={group.id} value={group.id}>
-                                            {group.name} ({group.course?.name || 'No course'}) - {group.students?.length || 0} students
+                                            {group.name} ({group.course?.name || 'No course'})
+                                            - {group.students?.length || 0} students
                                         </option>
                                     ))}
                                 </select>
@@ -689,7 +705,8 @@ export default function LessonsPage() {
                                         </option>
                                     ))}
                                 </select>
-                                {errors.teacherId && <p className="text-xs text-destructive">{errors.teacherId.message}</p>}
+                                {errors.teacherId &&
+                                    <p className="text-xs text-destructive">{errors.teacherId.message}</p>}
                             </div>
                         </div>
 
@@ -702,7 +719,8 @@ export default function LessonsPage() {
                                     {...register('startTime')}
                                     disabled={viewMode === 'view' || createLessonMutation.isPending || updateLessonMutation.isPending}
                                 />
-                                {errors.startTime && <p className="text-xs text-destructive">{errors.startTime.message}</p>}
+                                {errors.startTime &&
+                                    <p className="text-xs text-destructive">{errors.startTime.message}</p>}
                             </div>
 
                             <div className="space-y-2">
@@ -743,7 +761,7 @@ export default function LessonsPage() {
                                     >
                                         {day.slice(0, 3)}
                                         {selectedDays.includes(day) && (
-                                            <Check className="ml-1 h-3 w-3" />
+                                            <Check className="ml-1 h-3 w-3"/>
                                         )}
                                     </Button>
                                 ))}
@@ -784,7 +802,7 @@ export default function LessonsPage() {
                                 >
                                     {(createLessonMutation.isPending || updateLessonMutation.isPending) ? (
                                         <>
-                                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                            <Loader2 className="mr-2 h-4 w-4 animate-spin"/>
                                             {viewMode === 'create' ? 'Creating...' : 'Saving...'}
                                         </>
                                     ) : (
@@ -838,7 +856,7 @@ export default function LessonsPage() {
                         >
                             {deleteLessonMutation.isPending ? (
                                 <>
-                                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                    <Loader2 className="mr-2 h-4 w-4 animate-spin"/>
                                     Deleting...
                                 </>
                             ) : (

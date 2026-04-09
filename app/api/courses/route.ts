@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import logger from '@/lib/logger';
 
 export async function GET() {
     try {
@@ -16,7 +17,7 @@ export async function GET() {
 
         return NextResponse.json(courses);
     } catch (error) {
-        console.error('Error fetching courses:', error);
+        logger.error(`Error fetching courses: ${error}`);
         return NextResponse.json(
             { error: 'Failed to fetch courses' },
             { status: 500 }
@@ -37,9 +38,9 @@ export async function POST(request: NextRequest) {
         })
         return NextResponse.json(createdCource)
     } catch (error: any) {
-        console.error('Error fetching courses:', error);
+        logger.error(`Error creating course: ${error}`);
         return NextResponse.json(
-            { error: 'Failed to fetch courses' },
+            { error: 'Failed to create course' },
             { status: 500 }
         );
     }

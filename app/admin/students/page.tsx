@@ -14,7 +14,7 @@ import {
 import { cameFrom, Student as PStudent, Course, Groups } from "@prisma/client"
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Plus, Pencil, Trash2, Eye, BookOpen, User } from 'lucide-react';
+import { Plus, Pencil, Trash2, Eye, User } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -23,11 +23,11 @@ import { toast } from 'sonner';
 import { useQuery } from '@tanstack/react-query';
 import { axiosClient } from '@/lib/axiosClient';
 
-// Fixed Zod schema
+// Схема валидации Zod
 const studentSchema = z.object({
-    name: z.string().min(2, 'Name must be at least 2 characters'),
-    phone: z.string().min(10, 'Phone number must be valid'),
-    birthday: z.string().min(1, 'Birthday is required'),
+    name: z.string().min(2, 'Имя должно содержать минимум 2 символа'),
+    phone: z.string().min(10, 'Введите корректный номер телефона'),
+    birthday: z.string().min(1, 'Дата рождения обязательна'),
     courseId: z.string().optional(),
     groupId: z.string().optional(),
     cameFromId: z.string().optional()
@@ -36,13 +36,13 @@ const studentSchema = z.object({
 type StudentFormData = z.infer<typeof studentSchema>;
 
 type StudentWithRelations = PStudent & {
-    cources: Course[];
+    courses: Course[];
     group: Groups | null;
     cameFrom: cameFrom
 };
 
 export default function StudentsPage() {
-    // Fetch students data
+    // Загрузка данных студентов
     const { data: studentsData, isLoading, refetch } = useQuery({
         queryKey: ["students"],
         queryFn: async () => {
@@ -51,7 +51,7 @@ export default function StudentsPage() {
         },
     });
 
-    // Fetch courses for dropdown
+    // Загрузка курсов для выпадающего списка
     const { data: courses } = useQuery({
         queryKey: ["courses"],
         queryFn: async () => {
@@ -60,7 +60,7 @@ export default function StudentsPage() {
         },
     });
 
-    // Fetch groups for dropdown
+    // Загрузка групп для выпадающего списка
     const { data: groups } = useQuery({
         queryKey: ["groups"],
         queryFn: async () => {
@@ -69,7 +69,8 @@ export default function StudentsPage() {
         },
     });
 
-    const { data: cameFrom } = useQuery({
+    // Загрузка источников (откуда узнали)
+    const { data: cameFromData } = useQuery({
         queryKey: ['cameFrom'],
         queryFn: async () => {
             const { data } = await axiosClient.get("/api/cameFrom")
@@ -117,14 +118,14 @@ export default function StudentsPage() {
             setValue('name', student.name);
             setValue('phone', student.phone);
 
-            // Safely handle birthday date conversion
+            // Обработка даты рождения
             const birthday = new Date(student.birthday);
             const formattedBirthday = isNaN(birthday.getTime())
                 ? ''
                 : birthday.toISOString().split('T')[0];
             setValue('birthday', formattedBirthday);
 
-            setValue('courseId', student.cources?.[0]?.id || '');
+            setValue('courseId', student.courses?.[0]?.id || '');
             setValue('groupId', student.groupId || '');
             setValue('cameFromId', student.cameFrom?.id || undefined);
         } else {
@@ -146,9 +147,7 @@ export default function StudentsPage() {
         reset();
     };
 
-    // Create student using API route
     const createStudent = async (data: StudentFormData) => {
-
         const response = await axiosClient.post('/api/students', {
             name: data.name,
             phone: data.phone,
@@ -160,7 +159,6 @@ export default function StudentsPage() {
         return response.data;
     };
 
-    // Update student using API route
     const updateStudent = async (id: string, data: StudentFormData) => {
         try {
             const response = await axiosClient.put(`/api/students/${id}`, {
@@ -173,7 +171,7 @@ export default function StudentsPage() {
             });
             return response.data;
         } catch (error: any) {
-            throw new Error(error.response?.data?.error || 'Failed to update student');
+            throw new Error(error.response?.data?.error || 'Ошибка при обновлении студента');
         }
     };
 
@@ -181,21 +179,19 @@ export default function StudentsPage() {
         setIsSubmitting(true);
         try {
             if (viewMode === 'edit' && selectedStudent) {
-                // Update student
                 await updateStudent(selectedStudent.id, data);
-                toast.success("Student updated successfully!");
-                refetch();
+                toast.success("Данные студента обновлены!");
+                await refetch();
                 closeDialog();
             } else if (viewMode === 'create') {
-                // Create new student
                 await createStudent(data);
-                toast.success("Student created successfully!");
-                refetch();
+                toast.success("Студент успешно добавлен!");
+                await refetch();
                 closeDialog();
             }
         } catch (error: any) {
-            console.error('Error submitting student:', error);
-            toast.error(error.message || "Failed to save student");
+            console.error('Ошибка сохранения:', error);
+            toast.error(error.message || "Не удалось сохранить данные");
         } finally {
             setIsSubmitting(false);
         }
@@ -205,91 +201,85 @@ export default function StudentsPage() {
         setIsSubmitting(true)
         if (selectedStudent) {
             try {
-                // Delete student from database
                 await axiosClient.delete(`/api/students/${selectedStudent.id}`);
-
-                // Update local state
                 setStudents(students.filter((s) => s.id !== selectedStudent.id));
-                toast.success("Student deleted successfully!");
+                toast.success("Студент удален!");
                 closeDeleteDialog();
+                await refetch();
             } catch (error: any) {
-                console.error('Error deleting student:', error);
-                const errorMessage = error.response?.data?.error || "Failed to delete student";
+                console.error('Ошибка удаления:', error);
+                const errorMessage = error.response?.data?.error || "Ошибка при удалении";
                 toast.error(errorMessage);
 
-                // If it's a "not found" error, remove from local state anyway
                 if (error.response?.status === 404) {
                     setStudents(students.filter((s) => s.id !== selectedStudent.id));
-                    toast.info("Student was already removed");
+                    toast.info("Студент уже был удален");
                     closeDeleteDialog();
                 }
-            }
-            finally {
+            } finally {
                 setIsSubmitting(false)
             }
         }
     };
 
-    // Fixed columns definition to match DataTable interface
     const columns = [
         {
             key: 'name',
-            label: 'Name',
+            label: 'ФИО',
             sortable: true
         },
         {
             key: 'phone',
-            label: 'Phone',
+            label: 'Телефон',
             sortable: false
         },
         {
             key: 'courses',
-            label: 'Course',
+            label: 'Курс',
             sortable: true,
-            render: (cources: Course[] | undefined) => {
-                if (!cources || cources.length === 0) {
-                    return <span className="text-muted-foreground">No course</span>;
+            render: (courses: Course[] | undefined) => {
+                if (!courses || courses.length === 0) {
+                    return <span className="text-muted-foreground">Нет курса</span>;
                 }
-                return cources[0]?.name || 'No course';
+                return courses[0]?.name || 'Нет курса';
             }
         },
         {
             key: 'group',
-            label: 'Group',
+            label: 'Группа',
             sortable: true,
             render: (group: Groups | null | undefined) =>
-                group?.name || <span className="text-muted-foreground">No group</span>
+                group?.name || <span className="text-muted-foreground">Нет группы</span>
         },
         {
             key: 'cameFrom',
-            label: 'Source',
+            label: 'Источник',
             render: (cameFrom: any) => (
                 <Badge variant="outline" className="capitalize">
-                    {cameFrom ? cameFrom.name : "Unknown"}
+                    {cameFrom ? cameFrom.name : "Неизвестно"}
                 </Badge>
             ),
         },
         {
             key: 'birthday',
-            label: 'Birthday',
+            label: 'ДР',
             sortable: true,
             render: (birthday: string | Date) => {
                 const date = new Date(birthday);
-                return isNaN(date.getTime()) ? 'Invalid date' : date.toLocaleDateString();
+                return isNaN(date.getTime()) ? 'Дата неверна' : date.toLocaleDateString('ru-RU');
             },
         },
         {
             key: 'createdAt',
-            label: 'Joined',
+            label: 'Добавлен',
             sortable: true,
             render: (createdAt: string | Date) => {
                 const date = new Date(createdAt);
-                return isNaN(date.getTime()) ? 'Invalid date' : date.toLocaleDateString();
+                return isNaN(date.getTime()) ? 'Дата неверна' : date.toLocaleDateString('ru-RU');
             },
         },
     ];
 
-    // Loading state
     if (isLoading) {
         return (
             <div className="space-y-6">
@@ -329,12 +319,12 @@ export default function StudentsPage() {
 
     return (
         <div className="space-y-6">
-            {/* Header */}
+            {/* Заголовок */}
             <div className="flex items-center justify-between">
                 <div>
-                    <h1 className="text-3xl font-bold tracking-tight">Students</h1>
+                    <h1 className="text-3xl font-bold tracking-tight">Студенты</h1>
                     <p className="text-muted-foreground">
-                        Manage all students in the system ({students.length} total)
+                        Управление базой студентов (всего: {students.length})
                     </p>
                 </div>
                 <Button
@@ -343,11 +333,11 @@ export default function StudentsPage() {
                     size="lg"
                 >
                     <Plus className="h-4 w-4" />
-                    Add Student
+                    Добавить студента
                 </Button>
             </div>
 
-            {/* Data Table */}
+            {/* Таблица данных */}
             <DataTable
                 columns={columns}
                 data={students}
@@ -357,7 +347,7 @@ export default function StudentsPage() {
                             variant="ghost"
                             size="icon"
                             onClick={() => openDialog('view', student)}
-                            title="View student"
+                            title="Просмотр"
                         >
                             <Eye className="h-4 w-4" />
                         </Button>
@@ -365,7 +355,7 @@ export default function StudentsPage() {
                             variant="ghost"
                             size="icon"
                             onClick={() => openDialog('edit', student)}
-                            title="Edit student"
+                            title="Редактировать"
                         >
                             <Pencil className="h-4 w-4" />
                         </Button>
@@ -373,7 +363,7 @@ export default function StudentsPage() {
                             variant="ghost"
                             size="icon"
                             onClick={() => openDeleteDialog(student)}
-                            title="Delete student"
+                            title="Удалить"
                         >
                             <Trash2 className="h-4 w-4 text-destructive" />
                         </Button>
@@ -384,68 +374,65 @@ export default function StudentsPage() {
                         <div className="mx-auto h-12 w-12 text-muted-foreground mb-4">
                             <User className="h-12 w-12" />
                         </div>
-                        <h3 className="font-semibold text-lg mb-2">No students found</h3>
+                        <h3 className="font-semibold text-lg mb-2">Студенты не найдены</h3>
                         <p className="text-muted-foreground mb-4">
-                            Get started by creating a new student
+                            Начните работу, добавив первого студента в систему
                         </p>
 
                         <Button onClick={() => openDialog('create')}>
                             <Plus className="h-4 w-4 mr-2" />
-                            Create Student
+                            Создать запись
                         </Button>
                     </div>
                 }
             />
 
-            {/* Student Form Dialog */}
+            {/* Диалог формы */}
             <Dialog open={isDialogOpen} onOpenChange={closeDialog}>
                 <DialogContent className="max-w-md">
                     <DialogHeader>
                         <DialogTitle>
-                            {viewMode === 'create' ? 'Add New Student' :
-                                viewMode === 'edit' ? 'Edit Student' : 'Student Details'}
+                            {viewMode === 'create' ? 'Новый студент' :
+                                viewMode === 'edit' ? 'Редактирование' : 'Детали профиля'}
                         </DialogTitle>
                         <DialogDescription>
                             {viewMode === 'create'
-                                ? 'Fill in the details to add a new student'
+                                ? 'Заполните данные для регистрации студента'
                                 : viewMode === 'edit'
-                                    ? 'Update student information'
-                                    : 'View student details'}
+                                    ? 'Обновите информацию о студенте'
+                                    : 'Просмотр полной информации'}
                         </DialogDescription>
                     </DialogHeader>
 
                     <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-                        {/* Name */}
                         <div className="space-y-2">
-                            <Label htmlFor="name">Full Name *</Label>
+                            <Label htmlFor="name">ФИО *</Label>
                             <Input
                                 id="name"
                                 {...register('name')}
                                 disabled={viewMode === 'view' || isSubmitting}
-                                placeholder="Enter student's full name"
+                                placeholder="Иванов Иван Иванович"
                             />
                             {errors.name && (
                                 <p className="text-xs text-destructive">{errors.name.message}</p>
                             )}
                         </div>
 
-                        {/* Phone */}
                         <div className="space-y-2">
-                            <Label htmlFor="phone">Phone Number *</Label>
+                            <Label htmlFor="phone">Номер телефона *</Label>
                             <Input
                                 id="phone"
                                 {...register('phone')}
                                 disabled={viewMode === 'view' || isSubmitting}
-                                placeholder="Enter phone number"
+                                placeholder="+7 (999) 000-00-00"
                             />
                             {errors.phone && (
                                 <p className="text-xs text-destructive">{errors.phone.message}</p>
                             )}
                         </div>
 
-                        {/* Birthday */}
                         <div className="space-y-2">
-                            <Label htmlFor="birthday">Birthday *</Label>
+                            <Label htmlFor="birthday">Дата рождения *</Label>
                             <Input
                                 id="birthday"
                                 type="date"
@@ -457,67 +444,55 @@ export default function StudentsPage() {
                             )}
                         </div>
 
-                        {/* Course Selection */}
                         <div className="space-y-2">
-                            <Label htmlFor="courseId">Course</Label>
+                            <Label htmlFor="courseId">Курс</Label>
                             <select
                                 id="courseId"
                                 {...register('courseId')}
                                 disabled={viewMode === 'view' || isSubmitting}
                                 className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                             >
-                                <option value="">Select a course (optional)</option>
+                                <option value="">Выберите курс (необязательно)</option>
                                 {courses?.map((course: any) => (
                                     <option key={course.id} value={course.id}>
                                         {course.name}
                                     </option>
                                 ))}
                             </select>
-                            {errors.courseId && (
-                                <p className="text-xs text-destructive">{errors.courseId.message}</p>
-                            )}
                         </div>
 
-                        {/* Group Selection */}
                         <div className="space-y-2">
-                            <Label htmlFor="groupId">Group</Label>
+                            <Label htmlFor="groupId">Группа</Label>
                             <select
                                 id="groupId"
                                 {...register('groupId')}
                                 disabled={viewMode === 'view' || isSubmitting}
                                 className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                             >
-                                <option value="">Select a group (optional)</option>
+                                <option value="">Выберите группу (необязательно)</option>
                                 {groups?.map((group: any) => (
                                     <option key={group.id} value={group.id}>
                                         {group.name}
                                     </option>
                                 ))}
                             </select>
-                            {errors.groupId && (
-                                <p className="text-xs text-destructive">{errors.groupId.message}</p>
-                            )}
                         </div>
 
-                        {/* Came From */}
                         <div className="space-y-2">
-                            <Label htmlFor="cameFrom">How did they find us? *</Label>
+                            <Label htmlFor="cameFrom">Откуда узнали? *</Label>
                             <select
                                 id="cameFrom"
                                 {...register('cameFromId')}
                                 disabled={viewMode === 'view' || isSubmitting}
                                 className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                             >
-                                <option value="">Select source (optional)</option>
-                                {cameFrom?.map((cameFrom: any) => (
-                                    <option key={cameFrom.id} value={cameFrom.id}>
-                                        {cameFrom.name}
+                                <option value="">Выберите источник</option>
+                                {cameFromData?.map((source: any) => (
+                                    <option key={source.id} value={source.id}>
+                                        {source.name}
                                     </option>
                                 ))}
                             </select>
-                            {errors.cameFromId && (
-                                <p className="text-xs text-destructive">{errors.cameFromId.message}</p  >
-                            )}
                         </div>
 
                         <DialogFooter className="gap-2 sm:gap-0">
@@ -527,17 +502,17 @@ export default function StudentsPage() {
                                 onClick={closeDialog}
                                 disabled={isSubmitting}
                             >
-                                Cancel
+                                Отмена
                             </Button>
                             {viewMode !== 'view' && (
                                 <Button type="submit" disabled={isSubmitting} className='ml-2'>
                                     {isSubmitting ? (
                                         <div className="flex items-center gap-2">
                                             <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
-                                            {viewMode === 'create' ? 'Creating...' : 'Saving...'}
+                                            {viewMode === 'create' ? 'Создание...' : 'Сохранение...'}
                                         </div>
                                     ) : (
-                                        viewMode === 'create' ? 'Create Student' : 'Save Changes'
+                                        viewMode === 'create' ? 'Добавить студента' : 'Сохранить изменения'
                                     )}
                                 </Button>
                             )}
@@ -546,16 +521,16 @@ export default function StudentsPage() {
                 </DialogContent>
             </Dialog>
 
-            {/* Delete Confirmation Dialog */}
+            {/* Диалог удаления */}
             <Dialog open={isDeleteDialogOpen} onOpenChange={closeDeleteDialog}>
                 <DialogContent className="max-w-md">
                     <DialogHeader>
                         <DialogTitle className="text-destructive">
-                            Delete Student
+                            Удаление студента
                         </DialogTitle>
                         <DialogDescription>
-                            Are you sure you want to delete <strong>{selectedStudent?.name}</strong>?
-                            This action cannot be undone and all associated data will be permanently removed.
+                            Вы уверены, что хотите удалить студента <strong>{selectedStudent?.name}</strong>?
+                            Это действие нельзя отменить, все связанные данные будут безвозвратно удалены.
                         </DialogDescription>
                     </DialogHeader>
                     <DialogFooter>
@@ -565,7 +540,7 @@ export default function StudentsPage() {
                             onClick={closeDeleteDialog}
                             disabled={isSubmitting}
                         >
-                            Cancel
+                            Отмена
                         </Button>
                         <Button
                             type="button"
@@ -573,7 +548,7 @@ export default function StudentsPage() {
                             onClick={handleDelete}
                             disabled={isSubmitting}
                         >
-                            {isSubmitting ? "Deleting Student..." : "Delete Student"}
+                            {isSubmitting ? "Удаление..." : "Удалить"}
                         </Button>
                     </DialogFooter>
                 </DialogContent>

@@ -9,3 +9,7 @@ export const validSchema = z.object({
 export const sourceSchema = z.object({
     name: z.string({ error: "Source name is required!" })
 })
+
+export const itemSchema = z.object({
+    count: z.number({ error: "Items per page is required!" })
+})

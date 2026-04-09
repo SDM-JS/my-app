@@ -12,15 +12,17 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import DataTable, { Column } from '@/app/components/DataTable';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { axiosClient } from '@/lib/axiosClient';
-import { sourceSchema, validSchema } from '@/lib/validation';
+import { itemSchema, sourceSchema, validSchema } from '@/lib/validation';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { cameFrom } from '@prisma/client';
 import { toast } from 'sonner';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 
 type formData = z.infer<typeof validSchema>
 type sourceFormData = z.infer<typeof sourceSchema>
+
+type itemFormData = z.infer<typeof itemSchema>
 
 export default function SettingsPage() {
     const queryClient = useQueryClient();
@@ -37,7 +39,7 @@ export default function SettingsPage() {
                 const { data } = await axiosClient.get("/api/cameFrom")
                 return data
             } catch (error) {
-                console.error("Error fetching cameFrom data:", error)
+                console.error("Ошибка при загрузке источников:", error)
                 throw error
             }
         },
@@ -47,6 +49,10 @@ export default function SettingsPage() {
     const userInfo = useForm<formData>({
         resolver: zodResolver(validSchema),
     });
+
+    const itemInfo = useForm<itemFormData>({
+        resolver: zodResolver(itemSchema)
+    })
 
     const sourceForm = useForm<sourceFormData>({
         resolver: zodResolver(sourceSchema),
@@ -60,6 +66,13 @@ export default function SettingsPage() {
     const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
     const [selectedSource, setSelectedSource] = useState<cameFrom | null>(null)
 
+    const [itemsCount, setItemsCount] = useState<string | null>(null)
+
+    useEffect(() => {
+        const data = localStorage.getItem("itemsPerPage")
+        setItemsCount(data)
+    }, [])
+
     // Create mutation
     const createSource = useMutation({
         mutationKey: ["sourceCreate"],
@@ -68,14 +81,14 @@ export default function SettingsPage() {
             return data
         },
         onSuccess: async () => {
-            toast.success("Source created successfully!")
+            toast.success("Источник успешно создан!")
             setIsDialogOpen(false)
             sourceForm.reset()
             await queryClient.invalidateQueries({ queryKey: ['cameFrom'] })
         },
         onError: (error) => {
-            toast.error("Failed to create source")
-            console.error("Create source error:", error)
+            toast.error("Не удалось создать источник")
+            console.error("Ошибка создания источника:", error)
         }
     })
 
@@ -87,14 +100,14 @@ export default function SettingsPage() {
             return data
         },
         onSuccess: async () => {
-            toast.success("Source updated successfully!")
+            toast.success("Источник успешно обновлен!")
             setIsDialogOpen(false)
             sourceForm.reset()
             await queryClient.invalidateQueries({ queryKey: ['cameFrom'] })
         },
         onError: (error) => {
-            toast.error("Failed to update source")
-            console.error("Update source error:", error)
+            toast.error("Не удалось обновить источник")
+            console.error("Ошибка обновления источника:", error)
         }
     })
 
@@ -106,14 +119,14 @@ export default function SettingsPage() {
             return data
         },
         onSuccess: async () => {
-            toast.success("Source deleted successfully!")
+            toast.success("Источник успешно удален!")
             setIsDeleteDialogOpen(false)
             setSelectedSource(null)
             await queryClient.invalidateQueries({ queryKey: ['cameFrom'] })
         },
         onError: (error) => {
-            toast.error("Failed to delete source")
-            console.error("Delete source error:", error)
+            toast.error("Не удалось удалить источник")
+            console.error("Ошибка удаления источника:", error)
         }
     })
 
@@ -168,26 +181,31 @@ export default function SettingsPage() {
         userInfo.reset()
     }
 
+    const onSubmitItemCount = (data: itemFormData) => {
+        console.log(data)
+        itemInfo.reset()
+    }
+
     const columns: Column<Record<string, any>>[] = [{
         key: "name",
-        label: "Source name",
+        label: "Название источника",
         sortable: true
     },
     {
         key: 'createdAt',
-        label: 'Created At',
+        label: 'Дата создания',
         sortable: true,
         render: (createdAt: string | Date) => {
             const date = new Date(createdAt);
-            return isNaN(date.getTime()) ? 'Invalid date' : date.toLocaleDateString();
+            return isNaN(date.getTime()) ? 'Неверная дата' : date.toLocaleDateString('ru-RU');
         },
     }, {
         key: 'updatedAt',
-        label: 'Updated At',
+        label: 'Дата обновления',
         sortable: true,
         render: (updatedAt: string | Date) => {
             const date = new Date(updatedAt);
-            return isNaN(date.getTime()) ? 'Invalid date' : date.toLocaleDateString();
+            return isNaN(date.getTime()) ? 'Неверная дата' : date.toLocaleDateString('ru-RU');
         },
     }]
 
@@ -235,24 +253,24 @@ export default function SettingsPage() {
             <div className="space-y-6 p-4">
                 <div className="flex items-center justify-between">
                     <div className="space-y-1">
-                        <h1 className="text-3xl font-bold">Settings</h1>
-                        <p className="text-muted-foreground">Manage your system preferences</p>
+                        <h1 className="text-3xl font-bold">Настройки</h1>
+                        <p className="text-muted-foreground">Управление системными предпочтениями</p>
                     </div>
                 </div>
                 <Card className="border-destructive/50">
                     <CardContent className="pt-6">
                         <div className="text-center space-y-4">
                             <div className="text-destructive font-semibold">
-                                Failed to load sources
+                                Не удалось загрузить источники
                             </div>
                             <p className="text-sm text-muted-foreground">
-                                {error instanceof Error ? error.message : "An unknown error occurred"}
+                                {error instanceof Error ? error.message : "Произошла неизвестная ошибка"}
                             </p>
                             <Button
                                 onClick={() => queryClient.invalidateQueries({ queryKey: ['cameFrom'] })}
                                 variant="outline"
                             >
-                                Retry
+                                Повторить
                             </Button>
                         </div>
                     </CardContent>
@@ -264,8 +282,8 @@ export default function SettingsPage() {
     return (
         <div className="space-y-6">
             <div>
-                <h1 className="text-3xl font-bold">Settings</h1>
-                <p className="text-muted-foreground">Manage your system preferences</p>
+                <h1 className="text-3xl font-bold">Настройки</h1>
+                <p className="text-muted-foreground">Управление системными предпочтениями</p>
             </div>
 
             <div className="grid gap-6">
@@ -274,41 +292,61 @@ export default function SettingsPage() {
                     <CardHeader>
                         <CardTitle className="flex items-center gap-2">
                             <Globe className="h-5 w-5" />
-                            Profile Settings
+                            Настройки профиля
                         </CardTitle>
-                        <CardDescription>Update your personal information</CardDescription>
+                        <CardDescription>Обновите вашу личную информацию</CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-4">
                         <form className="grid gap-4 md:grid-cols-2" onSubmit={userInfo.handleSubmit(onSubmit)}>
                             <div className="space-y-2">
-                                <Label htmlFor="name">Full Name</Label>
+                                <Label htmlFor="name">Полное имя</Label>
                                 <Input id="name" {...userInfo.register("fullName")} />
                                 {userInfo.formState.errors.fullName && (
                                     <p className="text-xs text-destructive">{userInfo.formState.errors.fullName.message}</p>
                                 )}
                             </div>
                             <div className="space-y-2">
-                                <Label htmlFor="email">Email</Label>
+                                <Label htmlFor="email">Электронная почта</Label>
                                 <Input id="email" type="email" {...userInfo.register("email")} />
                                 {userInfo.formState.errors.email && (
                                     <p className="text-xs text-destructive">{userInfo.formState.errors.email.message}</p>
                                 )}
                             </div>
                             <div className="space-y-2">
-                                <Label htmlFor="phone">Phone</Label>
+                                <Label htmlFor="phone">Телефон</Label>
                                 <Input id="phone" {...userInfo.register("phoneNumber")} />
                                 {userInfo.formState.errors.phoneNumber && (
                                     <p className="text-xs text-destructive">{userInfo.formState.errors.phoneNumber.message}</p>
                                 )}
                             </div>
                             <div className="space-y-2">
-                                <Label htmlFor="role">Role</Label>
-                                <Input id="role" defaultValue="Admin" disabled />
+                                <Label htmlFor="role">Роль</Label>
+                                <Input id="role" defaultValue="Администратор" disabled />
                             </div>
                             <Button type="submit" className="gap-2 w-[30%] lg:w-[30%] sm:w-full">
                                 <Save className="h-4 w-4" />
-                                Save Changes
+                                Сохранить изменения
                             </Button>
+                        </form>
+                    </CardContent>
+                </Card>
+
+                <Card>
+                    <CardHeader>
+                        <CardTitle className="flex items-center gap-2">
+                            Элементов на странице
+                        </CardTitle>
+                        <CardDescription>Настройте количество отображаемых строк в таблицах</CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                        <form className="grid gap-4 md:grid-cols-2" onSubmit={itemInfo.handleSubmit(onSubmitItemCount)}>
+                            <div className="space-y-2">
+                                <Label htmlFor="items-per-page-count">Количество</Label>
+                                <Input id="items-per-page-count" {...itemInfo.register("count")} />
+                                {itemInfo.formState.errors.count && (
+                                    <p className="text-xs text-destructive">{itemInfo.formState.errors.count.message}</p>
+                                )}
+                            </div>
                         </form>
                     </CardContent>
                 </Card>
@@ -317,9 +355,9 @@ export default function SettingsPage() {
                 <Card>
                     <CardHeader>
                         <CardTitle className="flex items-center gap-2">
-                            Source Settings
+                            Настройки источников
                         </CardTitle>
-                        <CardDescription>Manage student sources</CardDescription>
+                        <CardDescription>Управление источниками (откуда пришел студент)</CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-4">
                         <DataTable
@@ -331,7 +369,7 @@ export default function SettingsPage() {
                                         variant="ghost"
                                         size="icon"
                                         onClick={() => openDialog('view', source as cameFrom)}
-                                        title="View source"
+                                        title="Просмотреть источник"
                                     >
                                         <Eye className="h-4 w-4" />
                                     </Button>
@@ -339,7 +377,7 @@ export default function SettingsPage() {
                                         variant="ghost"
                                         size="icon"
                                         onClick={() => openDialog('edit', source as cameFrom)}
-                                        title="Edit source"
+                                        title="Редактировать источник"
                                     >
                                         <Pencil className="h-4 w-4" />
                                     </Button>
@@ -347,7 +385,7 @@ export default function SettingsPage() {
                                         variant="ghost"
                                         size="icon"
                                         onClick={() => openDeleteDialog(source as cameFrom)}
-                                        title="Delete source"
+                                        title="Удалить источник"
                                         disabled={deleteSource.isPending}
                                     >
                                         <Trash2 className="h-4 w-4 text-destructive" />
@@ -359,20 +397,20 @@ export default function SettingsPage() {
                                     <div className="mx-auto h-12 w-12 text-muted-foreground mb-4">
                                         <Tag className="h-12 w-12" />
                                     </div>
-                                    <h3 className="font-semibold text-lg mb-2">No sources found</h3>
+                                    <h3 className="font-semibold text-lg mb-2">Источники не найдены</h3>
                                     <p className="text-muted-foreground mb-4">
-                                        Get started by creating your first source
+                                        Начните с создания вашего первого источника
                                     </p>
                                     <Button onClick={() => openDialog('create')}>
                                         <Plus className="h-4 w-4 mr-2" />
-                                        Create Source
+                                        Создать источник
                                     </Button>
                                 </div>
                             }
                             headerActions={
                                 <Button onClick={() => openDialog('create')} className="gap-2">
                                     <Plus className="h-4 w-4" />
-                                    Add Source
+                                    Добавить источник
                                 </Button>
                             }
                         />
@@ -384,28 +422,28 @@ export default function SettingsPage() {
                     <CardHeader>
                         <CardTitle className="flex items-center gap-2">
                             <Bell className="h-5 w-5" />
-                            Notification Settings
+                            Настройки уведомлений
                         </CardTitle>
-                        <CardDescription>Configure how you receive notifications</CardDescription>
+                        <CardDescription>Настройте способы получения уведомлений</CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-4">
                         <div className="flex items-center justify-between">
                             <div>
-                                <p className="font-medium">Email Notifications</p>
-                                <p className="text-sm text-muted-foreground">Receive notifications via email</p>
+                                <p className="font-medium">Email-уведомления</p>
+                                <p className="text-sm text-muted-foreground">Получать уведомления на электронную почту</p>
                             </div>
                             <Button variant="outline" size="sm">
-                                Enable
+                                Включить
                             </Button>
                         </div>
                         <Separator />
                         <div className="flex items-center justify-between">
                             <div>
-                                <p className="font-medium">SMS Notifications</p>
-                                <p className="text-sm text-muted-foreground">Receive notifications via SMS</p>
+                                <p className="font-medium">SMS-уведомления</p>
+                                <p className="text-sm text-muted-foreground">Получать уведомления через SMS</p>
                             </div>
                             <Button variant="outline" size="sm">
-                                Enable
+                                Включить
                             </Button>
                         </div>
                     </CardContent>
@@ -417,21 +455,21 @@ export default function SettingsPage() {
                 <DialogContent className="max-w-md">
                     <DialogHeader>
                         <DialogTitle>
-                            {viewMode === 'create' ? 'Create New Source' :
-                                viewMode === 'edit' ? 'Edit Source' : 'View Source'}
+                            {viewMode === 'create' ? 'Создать новый источник' :
+                                viewMode === 'edit' ? 'Редактировать источник' : 'Просмотр источника'}
                         </DialogTitle>
                         <DialogDescription>
                             {viewMode === 'create'
-                                ? 'Add a new source to the system'
+                                ? 'Добавьте новый источник в систему'
                                 : viewMode === 'edit'
-                                    ? 'Update source information'
-                                    : 'Source details'}
+                                    ? 'Обновите информацию об источнике'
+                                    : 'Детали источника'}
                         </DialogDescription>
                     </DialogHeader>
                     <form onSubmit={sourceForm.handleSubmit(handleSourceSubmit)} className="space-y-4">
                         <div className="space-y-2">
                             <Label htmlFor="name">
-                                Source name *
+                                Название источника *
                                 {viewMode === 'view' && selectedSource && (
                                     <span className="text-xs text-muted-foreground ml-2">
                                         ID: {selectedSource.id}
@@ -444,7 +482,7 @@ export default function SettingsPage() {
                                     id="name"
                                     {...sourceForm.register('name')}
                                     disabled={viewMode === 'view' || createSource.isPending || updateSource.isPending}
-                                    placeholder="Enter source name"
+                                    placeholder="Введите название источника"
                                     className="pl-10"
                                 />
                             </div>
@@ -455,9 +493,9 @@ export default function SettingsPage() {
                             <div className="space-y-3 pt-2 border-t">
                                 <div className="grid grid-cols-2 gap-4">
                                     <div>
-                                        <Label className="text-xs text-muted-foreground">Created</Label>
+                                        <Label className="text-xs text-muted-foreground">Создан</Label>
                                         <p className="text-sm">
-                                            {new Date(selectedSource.createdAt).toLocaleDateString('en-US', {
+                                            {new Date(selectedSource.createdAt).toLocaleDateString('ru-RU', {
                                                 year: 'numeric',
                                                 month: 'long',
                                                 day: 'numeric'
@@ -465,9 +503,9 @@ export default function SettingsPage() {
                                         </p>
                                     </div>
                                     <div>
-                                        <Label className="text-xs text-muted-foreground">Last Updated</Label>
+                                        <Label className="text-xs text-muted-foreground">Последнее обновление</Label>
                                         <p className="text-sm">
-                                            {new Date(selectedSource.updatedAt).toLocaleDateString('en-US', {
+                                            {new Date(selectedSource.updatedAt).toLocaleDateString('ru-RU', {
                                                 year: 'numeric',
                                                 month: 'long',
                                                 day: 'numeric'
@@ -485,7 +523,7 @@ export default function SettingsPage() {
                                 onClick={closeDialog}
                                 disabled={createSource.isPending || updateSource.isPending}
                             >
-                                {viewMode === 'view' ? 'Close' : 'Cancel'}
+                                {viewMode === 'view' ? 'Закрыть' : 'Отмена'}
                             </Button>
                             {viewMode !== 'view' && (
                                 <Button
@@ -496,10 +534,10 @@ export default function SettingsPage() {
                                     {(createSource.isPending || updateSource.isPending) ? (
                                         <div className="flex items-center gap-2">
                                             <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
-                                            {viewMode === 'create' ? 'Creating...' : 'Saving...'}
+                                            {viewMode === 'create' ? 'Создание...' : 'Сохранение...'}
                                         </div>
                                     ) : (
-                                        viewMode === 'create' ? 'Create Source' : 'Save Changes'
+                                        viewMode === 'create' ? 'Создать источник' : 'Сохранить изменения'
                                     )}
                                 </Button>
                             )}
@@ -512,14 +550,13 @@ export default function SettingsPage() {
             <AlertDialog open={isDeleteDialogOpen} onOpenChange={closeDeleteDialog}>
                 <AlertDialogContent>
                     <AlertDialogHeader>
-                        <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                        <AlertDialogTitle>Вы уверены?</AlertDialogTitle>
                         <AlertDialogDescription>
-                            This action cannot be undone. This will permanently delete the source
-                            "{selectedSource?.name}" and remove it from the system.
+                            Это действие нельзя отменить. Источник "{selectedSource?.name}" будет безвозвратно удален из системы.
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
-                        <AlertDialogCancel disabled={deleteSource.isPending}>Cancel</AlertDialogCancel>
+                        <AlertDialogCancel disabled={deleteSource.isPending}>Отмена</AlertDialogCancel>
                         <AlertDialogAction
                             onClick={handleDeleteSource}
                             disabled={deleteSource.isPending}
@@ -528,10 +565,10 @@ export default function SettingsPage() {
                             {deleteSource.isPending ? (
                                 <div className="flex items-center gap-2">
                                     <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
-                                    Deleting...
+                                    Удаление...
                                 </div>
                             ) : (
-                                'Delete'
+                                'Удалить'
                             )}
                         </AlertDialogAction>
                     </AlertDialogFooter>

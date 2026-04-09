@@ -1,6 +1,7 @@
 // app/api/attendances/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import logger from '@/lib/logger';
 
 export async function GET() {
     try {
@@ -28,7 +29,7 @@ export async function GET() {
 
         return NextResponse.json(attendances);
     } catch (error) {
-        console.error('Error fetching attendances:', error);
+        logger.error(`Error fetching attendances: ${error}`);
         return NextResponse.json(
             { error: 'Failed to fetch attendances' },
             { status: 500 }
@@ -63,7 +64,7 @@ export async function POST(request: NextRequest) {
 
         return NextResponse.json(attendance, { status: 201 });
     } catch (error: any) {
-        console.error('Error creating attendance:', error);
+        logger.error(`Error creating attendance: ${error}`);
         return NextResponse.json(
             { error: 'Failed to create attendance' },
             { status: 500 }

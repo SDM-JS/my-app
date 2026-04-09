@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import logger from '@/lib/logger';
 
 // GET single subject
 export async function GET(
@@ -21,7 +22,7 @@ export async function GET(
 
         return NextResponse.json(subject);
     } catch (error) {
-        console.error('Error fetching subject:', error);
+        logger.error(`Error fetching subject: ${error}`);
         return NextResponse.json(
             { error: 'Failed to fetch subject' },
             { status: 500 }
@@ -53,7 +54,7 @@ export async function PUT(
 
         return NextResponse.json(subject);
     } catch (error) {
-        console.error('Error updating subject:', error);
+        logger.error(`Error updating subject: ${error}`);
         return NextResponse.json(
             { error: 'Failed to update subject' },
             { status: 500 }
@@ -68,7 +69,6 @@ export async function DELETE(
 ) {
     try {
         const { id } = await params
-        console.log(id)
         // Check if subject has courses
         const coursesCount = await prisma.course.count({
             where: { subjectId: id }

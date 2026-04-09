@@ -28,14 +28,14 @@ import { useQuery } from '@tanstack/react-query';
 import { axiosClient } from '@/lib/axiosClient';
 import { Groups, Teacher, Course, DaysOfWeek } from '@prisma/client';
 
-// Zod schema matching your updated Prisma schema
+// Схема Zod, соответствующая обновленной схеме Prisma
 const groupSchema = z.object({
-    name: z.string().min(1, 'Group name is required'),
-    courseId: z.string().min(1, 'Course is required'),
-    teacherId: z.string().min(1, 'Teacher is required!'),
-    from: z.string().min(1, 'Start time is required'),
-    to: z.string().min(1, 'End time is required'),
-    daysOfWeek: z.array(z.enum(["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"])).min(1, 'Select at least one day'),
+    name: z.string().min(1, 'Название группы обязательно'),
+    courseId: z.string().min(1, 'Курс обязателен'),
+    teacherId: z.string().min(1, 'Преподаватель обязателен!'),
+    from: z.string().min(1, 'Время начала обязательно'),
+    to: z.string().min(1, 'Время окончания обязательно'),
+    daysOfWeek: z.array(z.enum(["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"])).min(1, 'Выберите хотя бы один день'),
 });
 
 type GroupFormData = z.infer<typeof groupSchema>;
@@ -46,24 +46,27 @@ type GroupWithRelations = Groups & {
     students: any[];
 };
 
-// Helper function to transform groups for DataTable
+// Вспомогательная функция для преобразования групп для DataTable
 const transformGroupsForTable = (groups: GroupWithRelations[]) => {
     return groups.map(group => ({
         id: group.id,
         name: group.name,
-        course: group.course?.name || 'No course',
-        teacher: group.teacher?.name || 'No teacher',
+        course: group.course?.name || 'Нет курса',
+        teacher: group.teacher?.name || 'Нет преподавателя',
         studentCount: group.students?.length || 0,
-        // Keep the original objects for render functions
-        _cource: group.course,
+        from: (group as any).from,
+        to: (group as any).to,
+        daysOfWeek: (group as any).daysOfWeek ?? [],
+        // Сохраняем исходные объекты для функций рендеринга
+        _course: group.course,
         _teacher: group.teacher,
         _students: group.students,
-        _raw: group // Keep raw data for actions
+        _raw: group // Сохраняем исходные данные для действий
     }));
 };
 
 export default function GroupsPage() {
-    // Fetch groups data with relations
+    // Получение данных групп с отношениями
     const { data: groupsData, isLoading, refetch } = useQuery({
         queryKey: ["groups"],
         queryFn: async () => {
@@ -72,7 +75,7 @@ export default function GroupsPage() {
         },
     });
 
-    // Fetch courses for dropdown
+    // Получение курсов для выпадающего списка
     const { data: courses } = useQuery({
         queryKey: ["courses"],
         queryFn: async () => {
@@ -81,7 +84,7 @@ export default function GroupsPage() {
         },
     });
 
-    // Fetch teachers for dropdown
+    // Получение преподавателей для выпадающего списка
     const { data: teachers } = useQuery({
         queryKey: ["teachers"],
         queryFn: async () => {
@@ -99,11 +102,11 @@ export default function GroupsPage() {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [selectedDays, setSelectedDays] = useState<DaysOfWeek[]>([]);
 
-    // Popover states for course selection
+    // Состояния Popover для выбора курса
     const [courseSearch, setCourseSearch] = useState('');
     const [selectedCourse, setSelectedCourse] = useState<Course | null>(null);
 
-    // Popover states for teacher selection
+    // Состояния Popover для выбора преподавателя
     const [teacherSearch, setTeacherSearch] = useState('');
     const [selectedTeacher, setSelectedTeacher] = useState<Teacher | null>(null);
 
@@ -114,7 +117,7 @@ export default function GroupsPage() {
         }
     }, [groupsData]);
 
-    // Filter courses based on search
+    // Фильтрация курсов на основе поиска
     const filteredCourses = useMemo(() => {
         if (!courses) return [];
         return courses.filter((course: Course) =>
@@ -123,7 +126,7 @@ export default function GroupsPage() {
         );
     }, [courses, courseSearch]);
 
-    // Filter teachers based on search
+    // Фильтрация преподавателей на основе поиска
     const filteredTeachers = useMemo(() => {
         if (!teachers) return [];
         return teachers.filter((teacher: Teacher) =>
@@ -163,19 +166,19 @@ export default function GroupsPage() {
             const originalGroup = groups.find(g => g.id === tableGroup._raw.id) || tableGroup._raw;
             setSelectedGroup(originalGroup);
 
-            // Set course
-            const courseObj = originalGroup.cource;
+            // Установка курса
+            const courseObj = originalGroup.course;
             setSelectedCourse(courseObj);
             setValue('courseId', originalGroup.courseId || '');
 
-            // Set teacher
+            // Установка преподавателя
             const teacherObj = originalGroup.teacher;
             setSelectedTeacher(teacherObj);
             setValue('teacherId', originalGroup.teacherId || '');
 
             setValue('name', originalGroup.name);
 
-            // Set days
+            // Установка дней
             const days = originalGroup.daysOfWeek as DaysOfWeek[];
             setSelectedDays(days);
             setValue('daysOfWeek', days);
@@ -215,7 +218,7 @@ export default function GroupsPage() {
         setValue('daysOfWeek', newDays);
     };
 
-    // Handle course selection
+    // Обработка выбора курса
     const handleSelectCourse = (course: Course) => {
         setSelectedCourse(course);
         setValue('courseId', course.id);
@@ -223,7 +226,7 @@ export default function GroupsPage() {
         trigger('courseId');
     };
 
-    // Handle teacher selection
+    // Обработка выбора преподавателя
     const handleSelectTeacher = (teacher: Teacher) => {
         setSelectedTeacher(teacher);
         setValue('teacherId', teacher.id);
@@ -231,23 +234,23 @@ export default function GroupsPage() {
         trigger('teacherId');
     };
 
-    // Clear course selection
+    // Очистка выбора курса
     const handleClearCourse = () => {
         setSelectedCourse(null);
         setValue('courseId', '');
         trigger('courseId');
     };
 
-    // Clear teacher selection
+    // Очистка выбора преподавателя
     const handleClearTeacher = () => {
         setSelectedTeacher(null);
         setValue('teacherId', '');
         trigger('teacherId');
     };
 
-    // Create group using API route
+    // Создание группы через API
     const createGroup = async (data: GroupFormData) => {
-        // Convert time strings to full datetime
+        // Преобразование строк времени в полную дату и время
         const today = new Date();
         const fromTime = new Date(`${today.toISOString().split('T')[0]}T${data.from}:00`);
         const toTime = new Date(`${today.toISOString().split('T')[0]}T${data.to}:00`);
@@ -263,16 +266,16 @@ export default function GroupsPage() {
         return response.data;
     };
 
-    // Update group using API route
+    // Обновление группы через API
     const updateGroup = async (id: string, data: GroupFormData) => {
         try {
-            // Convert time strings to full datetime
+            // Преобразование строк времени в полную дату и время
             const today = new Date();
             const fromTime = new Date(`${today.toISOString().split('T')[0]}T${data.from}:00`);
             const toTime = new Date(`${today.toISOString().split('T')[0]}T${data.to}:00`);
 
             const response = await axiosClient.put(`/api/groups/${id}`, {
-                studentName: data.name,
+                name: data.name,
                 courseId: data.courseId,
                 teacherId: data.teacherId,
                 from: fromTime,
@@ -281,7 +284,7 @@ export default function GroupsPage() {
             });
             return response.data;
         } catch (error: any) {
-            throw new Error(error.response?.data?.error || 'Failed to update group');
+            throw new Error(error.response?.data?.error || 'Не удалось обновить группу');
         }
     };
 
@@ -289,21 +292,21 @@ export default function GroupsPage() {
         setIsSubmitting(true);
         try {
             if (viewMode === 'edit' && selectedGroup) {
-                // Update group
+                // Обновление группы
                 await updateGroup(selectedGroup.id, data);
-                toast.success("Group updated successfully!");
-                refetch();
+                toast.success("Группа успешно обновлена!");
+                await refetch();
                 closeDialog();
             } else if (viewMode === 'create') {
-                // Create new group
+                // Создание новой группы
                 await createGroup(data);
-                toast.success("Group created successfully!");
-                refetch();
+                toast.success("Группа успешно создана!");
+                await refetch();
                 closeDialog();
             }
         } catch (error: any) {
-            console.error('Error submitting group:', error);
-            toast.error(error.message || "Failed to save group");
+            console.error('Ошибка при сохранении группы:', error);
+            toast.error(error.message || "Не удалось сохранить группу");
         } finally {
             setIsSubmitting(false);
         }
@@ -312,54 +315,54 @@ export default function GroupsPage() {
     const handleDelete = async () => {
         if (selectedGroup) {
             try {
-                // Delete group from database
+                // Удаление группы из базы данных
                 await axiosClient.delete(`/api/groups/${selectedGroup.id}`);
 
-                // Update local state
                 setGroups(groups.filter((g) => g.id !== selectedGroup.id));
-                toast.success("Group deleted successfully!");
+                toast.success("Группа успешно удалена!");
                 closeDeleteDialog();
+                await refetch();
             } catch (error: any) {
-                console.error('Error deleting group:', error);
-                const errorMessage = error.response?.data?.error || "Failed to delete group";
+                console.error('Ошибка при удалении группы:', error);
+                const errorMessage = error.response?.data?.error || "Не удалось удалить группу";
                 toast.error(errorMessage);
 
-                // If it's a "not found" error, remove from local state anyway
+                // Если ошибка "не найдено", все равно удаляем из локального состояния
                 if (error.response?.status === 404) {
                     setGroups(groups.filter((g) => g.id !== selectedGroup.id));
-                    toast.info("Group was already removed");
+                    toast.info("Группа уже была удалена");
                     closeDeleteDialog();
                 }
             }
         }
     };
 
-    // Fixed columns definition to match DataTable interface
+    // Определение колонок для DataTable
     const columns = [
         {
             key: 'name',
-            label: 'Group Name',
+            label: 'Название группы',
             sortable: true
         },
         {
             key: 'course',
-            label: 'Course',
+            label: 'Курс',
             sortable: true,
-            render: (value: string, item: any) => {
-                return value || <span className="text-muted-foreground">No course</span>;
+            render: (value: string) => {
+                return value || <span className="text-muted-foreground">Нет курса</span>;
             }
         },
         {
             key: 'teacher',
-            label: 'Teacher',
+            label: 'Преподаватель',
             sortable: true,
-            render: (value: string, item: any) => {
-                return value || <span className="text-muted-foreground">No teacher</span>;
+            render: (value: string) => {
+                return value || <span className="text-muted-foreground">Нет преподавателя</span>;
             }
         },
         {
             key: 'studentCount',
-            label: 'Students',
+            label: 'Студенты',
             sortable: true,
             render: (value: number) => {
                 return <span className="text-blue-500 font-medium">{value}</span>;
@@ -367,31 +370,32 @@ export default function GroupsPage() {
         },
         {
             key: 'from',
-            label: 'Time',
+            label: 'Время',
             sortable: true,
             render: (value: Date, item: any) => {
+                if (value == null || item?.to == null) return <span className="text-muted-foreground">—</span>;
                 const fromDate = new Date(value);
                 const toDate = new Date(item.to);
                 if (isNaN(fromDate.getTime()) || isNaN(toDate.getTime())) {
-                    return 'Invalid time';
+                    return <span className="text-muted-foreground">—</span>;
                 }
                 return `${fromDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} - ${toDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
             },
         },
         {
             key: 'daysOfWeek',
-            label: 'Days',
+            label: 'Дни',
             sortable: true,
             render: (value: DaysOfWeek[]) => {
                 if (!value || value.length === 0) {
-                    return 'No days';
+                    return 'Нет дней';
                 }
                 return value.map(day => day.slice(0, 3)).join(', ');
             },
         },
     ];
 
-    // Loading state
+    // Состояние загрузки
     if (isLoading) {
         return (
             <div className="space-y-6">
@@ -431,12 +435,12 @@ export default function GroupsPage() {
 
     return (
         <div className="space-y-6">
-            {/* Header */}
+            {/* Заголовок */}
             <div className="flex items-center justify-between">
                 <div>
-                    <h1 className="text-3xl font-bold">Groups</h1>
+                    <h1 className="text-3xl font-bold">Группы</h1>
                     <p className="text-muted-foreground">
-                        Manage all student groups ({tableData.length} total)
+                        Управление всеми группами студентов (всего {tableData.length})
                     </p>
                 </div>
                 <Button
@@ -444,11 +448,11 @@ export default function GroupsPage() {
                     className="gap-2"
                 >
                     <Plus className="h-4 w-4" />
-                    Create Group
+                    Создать группу
                 </Button>
             </div>
 
-            {/* Data Table */}
+            {/* Таблица данных */}
             <DataTable
                 columns={columns}
                 data={tableData}
@@ -458,7 +462,7 @@ export default function GroupsPage() {
                             variant="ghost"
                             size="icon"
                             onClick={() => openDialog('view', item)}
-                            title="View group"
+                            title="Просмотр группы"
                         >
                             <Eye className="h-4 w-4" />
                         </Button>
@@ -466,7 +470,7 @@ export default function GroupsPage() {
                             variant="ghost"
                             size="icon"
                             onClick={() => openDialog('edit', item)}
-                            title="Edit group"
+                            title="Редактирование группы"
                         >
                             <Pencil className="h-4 w-4" />
                         </Button>
@@ -474,7 +478,7 @@ export default function GroupsPage() {
                             variant="ghost"
                             size="icon"
                             onClick={() => openDeleteDialog(item)}
-                            title="Delete group"
+                            title="Удаление группы"
                         >
                             <Trash2 className="h-4 w-4 text-destructive" />
                         </Button>
@@ -482,37 +486,37 @@ export default function GroupsPage() {
                 )}
             />
 
-            {/* Group Form Dialog */}
-            <Dialog open={isDialogOpen} onOpenChange={closeDialog}>
+            {/* Диалог формы группы */}
+            <Dialog open={isDialogOpen} onOpenChange={(open) => { if (!open) closeDialog(); }}>
                 <DialogContent className="max-w-md">
                     <DialogHeader>
                         <DialogTitle>
-                            {viewMode === 'create' ? 'Create New Group' :
-                                viewMode === 'edit' ? 'Edit Group' : 'View Group'}
+                            {viewMode === 'create' ? 'Создать новую группу' :
+                                viewMode === 'edit' ? 'Редактировать группу' : 'Просмотр группы'}
                         </DialogTitle>
                         <DialogDescription>
                             {viewMode === 'create'
-                                ? 'Fill in the details to create a new group'
+                                ? 'Заполните данные для создания новой группы'
                                 : viewMode === 'edit'
-                                    ? 'Update group information'
-                                    : 'Group details'}
+                                    ? 'Обновление информации о группе'
+                                    : 'Детали группы'}
                         </DialogDescription>
                     </DialogHeader>
                     <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
                         <div className="space-y-2">
-                            <Label htmlFor="name">Group Name *</Label>
+                            <Label htmlFor="name">Название группы *</Label>
                             <Input
                                 id="name"
                                 {...register('name')}
                                 disabled={viewMode === 'view' || isSubmitting}
-                                placeholder="Enter group name"
+                                placeholder="Введите название группы"
                             />
                             {errors.name && <p className="text-xs text-destructive">{errors.name.message}</p>}
                         </div>
 
-                        {/* Course Selection Popover */}
+                        {/* Popover выбора курса */}
                         <div className="space-y-2">
-                            <Label>Course *</Label>
+                            <Label>Курс *</Label>
                             <Popover>
                                 <PopoverTrigger asChild>
                                     <Button
@@ -540,7 +544,7 @@ export default function GroupsPage() {
                                         ) : (
                                             <div className="flex items-center gap-2 text-muted-foreground">
                                                 <BookOpen className="h-4 w-4" />
-                                                <span>Select a course</span>
+                                                <span>Выберите курс</span>
                                             </div>
                                         )}
                                     </Button>
@@ -550,7 +554,7 @@ export default function GroupsPage() {
                                         <div className="relative">
                                             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                                             <Input
-                                                placeholder="Search courses..."
+                                                placeholder="Поиск курсов..."
                                                 value={courseSearch}
                                                 onChange={(e) => setCourseSearch(e.target.value)}
                                                 className="pl-10"
@@ -586,7 +590,7 @@ export default function GroupsPage() {
                                         ) : (
                                             <div className="py-6 text-center">
                                                 <p className="text-sm text-muted-foreground">
-                                                    {courseSearch ? 'No courses found' : 'No courses available'}
+                                                    {courseSearch ? 'Курсы не найдены' : 'Нет доступных курсов'}
                                                 </p>
                                             </div>
                                         )}
@@ -597,9 +601,9 @@ export default function GroupsPage() {
                             <input type="hidden" {...register('courseId')} />
                         </div>
 
-                        {/* Teacher Selection Popover */}
+                        {/* Popover выбора преподавателя */}
                         <div className="space-y-2">
-                            <Label>Teacher *</Label>
+                            <Label>Преподаватель *</Label>
                             <Popover>
                                 <PopoverTrigger asChild>
                                     <Button
@@ -615,7 +619,6 @@ export default function GroupsPage() {
                                                 </div>
                                                 {viewMode !== 'view' && (
                                                     <div
-
                                                         className="h-6 w-6 hover:bg-accent hover:text-accent-foreground inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-smooth focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0"
                                                         onClick={(e) => {
                                                             e.stopPropagation();
@@ -629,7 +632,7 @@ export default function GroupsPage() {
                                         ) : (
                                             <div className="flex items-center gap-2 text-muted-foreground">
                                                 <GraduationCap className="h-4 w-4" />
-                                                <span>Select a teacher</span>
+                                                <span>Выберите преподавателя</span>
                                             </div>
                                         )}
                                     </Button>
@@ -639,7 +642,7 @@ export default function GroupsPage() {
                                         <div className="relative">
                                             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                                             <Input
-                                                placeholder="Search teachers..."
+                                                placeholder="Поиск преподавателей..."
                                                 value={teacherSearch}
                                                 onChange={(e) => setTeacherSearch(e.target.value)}
                                                 className="pl-10"
@@ -673,7 +676,7 @@ export default function GroupsPage() {
                                         ) : (
                                             <div className="py-6 text-center">
                                                 <p className="text-sm text-muted-foreground">
-                                                    {teacherSearch ? 'No teachers found' : 'No teachers available'}
+                                                    {teacherSearch ? 'Преподаватели не найдены' : 'Нет доступных преподавателей'}
                                                 </p>
                                             </div>
                                         )}
@@ -686,7 +689,7 @@ export default function GroupsPage() {
 
                         <div className="grid grid-cols-2 gap-4">
                             <div className="space-y-2">
-                                <Label htmlFor="from">Start Time *</Label>
+                                <Label htmlFor="from">Время начала *</Label>
                                 <Input
                                     id="from"
                                     type="time"
@@ -697,7 +700,7 @@ export default function GroupsPage() {
                             </div>
 
                             <div className="space-y-2">
-                                <Label htmlFor="to">End Time *</Label>
+                                <Label htmlFor="to">Время окончания *</Label>
                                 <Input
                                     id="to"
                                     type="time"
@@ -709,7 +712,7 @@ export default function GroupsPage() {
                         </div>
 
                         <div className="space-y-2">
-                            <Label>Days of Week *</Label>
+                            <Label>Дни недели *</Label>
                             <div className="flex flex-wrap gap-2">
                                 {["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"].map((day) => (
                                     <Button
@@ -736,17 +739,17 @@ export default function GroupsPage() {
                                 onClick={closeDialog}
                                 disabled={isSubmitting}
                             >
-                                Cancel
+                                Отмена
                             </Button>
                             {viewMode !== 'view' && (
                                 <Button type="submit" disabled={isSubmitting} className='ml-2'>
                                     {isSubmitting ? (
                                         <div className="flex items-center gap-2">
                                             <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
-                                            {viewMode === 'create' ? 'Creating...' : 'Saving...'}
+                                            {viewMode === 'create' ? 'Создание...' : 'Сохранение...'}
                                         </div>
                                     ) : (
-                                        viewMode === 'create' ? 'Create Group' : 'Save Changes'
+                                        viewMode === 'create' ? 'Создать группу' : 'Сохранить изменения'
                                     )}
                                 </Button>
                             )}
@@ -755,22 +758,22 @@ export default function GroupsPage() {
                 </DialogContent>
             </Dialog>
 
-            {/* Delete Confirmation Dialog */}
-            <Dialog open={isDeleteDialogOpen} onOpenChange={closeDeleteDialog}>
+            {/* Диалог подтверждения удаления */}
+            <Dialog open={isDeleteDialogOpen} onOpenChange={(open) => { if (!open) closeDeleteDialog(); }}>
                 <DialogContent className="max-w-md">
                     <DialogHeader>
-                        <DialogTitle className="text-destructive">Delete Group</DialogTitle>
+                        <DialogTitle className="text-destructive">Удалить группу</DialogTitle>
                         <DialogDescription>
-                            Are you sure you want to delete the "<strong>{selectedGroup?.name}</strong>" group?
-                            This action cannot be undone and all students in this group will be unassigned.
+                            Вы уверены, что хотите удалить группу "<strong>{selectedGroup?.name}</strong>"?
+                            Это действие невозможно отменить, и все студенты в этой группе будут откреплены.
                         </DialogDescription>
                     </DialogHeader>
                     <DialogFooter>
                         <Button type="button" variant="outline" onClick={closeDeleteDialog}>
-                            Cancel
+                            Отмена
                         </Button>
                         <Button type="button" variant="destructive" onClick={handleDelete}>
-                            Delete Group
+                            Удалить группу
                         </Button>
                     </DialogFooter>
                 </DialogContent>

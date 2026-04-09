@@ -27,9 +27,9 @@ interface DataTableProps<T> {
     onSearch?: (query: string) => void;
     itemsPerPage?: number;
     emptyMessage?: ReactNode;
-    headerActions?: ReactNode; // New optional prop for header actions
-    showSearch?: boolean; // Option to show/hide search
-    className?: string; // Optional className for the container
+    headerActions?: ReactNode; // Опциональные действия в заголовке
+    showSearch?: boolean; // Показать/скрыть поиск
+    className?: string; // Дополнительный CSS-класс
 }
 
 export default function DataTable<T extends Record<string, any>>({
@@ -47,7 +47,7 @@ export default function DataTable<T extends Record<string, any>>({
     const [searchQuery, setSearchQuery] = useState('');
     const [sortConfig, setSortConfig] = useState<{ key: string; direction: 'asc' | 'desc' } | null>(null);
 
-    // Filter data based on search
+    // Фильтрация данных на основе поиска
     const filteredData = searchQuery
         ? data.filter((item) =>
             Object.values(item).some((value) =>
@@ -56,7 +56,7 @@ export default function DataTable<T extends Record<string, any>>({
         )
         : data;
 
-    // Sort data
+    // Сортировка данных
     const sortedData = sortConfig
         ? [...filteredData].sort((a, b) => {
             const aValue = a[sortConfig.key];
@@ -68,7 +68,7 @@ export default function DataTable<T extends Record<string, any>>({
         })
         : filteredData;
 
-    // Pagination
+    // Пагинация
     const totalPages = Math.ceil(sortedData.length / itemsPerPage);
     const startIndex = (currentPage - 1) * itemsPerPage;
     const endIndex = startIndex + itemsPerPage;
@@ -88,28 +88,28 @@ export default function DataTable<T extends Record<string, any>>({
         onSearch?.(value);
     };
 
-    // Default empty message if not provided
+    // Сообщение по умолчанию при отсутствии данных
     const defaultEmptyMessage = (
         <div className="flex flex-col items-center justify-center py-12 text-center">
             <PackageX className="h-12 w-12 text-muted-foreground mb-4" />
-            <h3 className="font-semibold text-lg mb-2">No data found</h3>
+            <h3 className="font-semibold text-lg mb-2">Данные не найдены</h3>
             <p className="text-muted-foreground">
-                {searchQuery ? 'Try a different search term' : 'No data available'}
+                {searchQuery ? 'Попробуйте изменить поисковый запрос' : 'Данные отсутствуют'}
             </p>
         </div>
     );
 
     return (
         <div className={`space-y-4 ${className}`}>
-            {/* Header with Search and Actions */}
+            {/* Заголовок с поиском и действиями */}
             {(showSearch || headerActions) && (
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                    {/* Search Bar - only shown if showSearch is true */}
+                    {/* Панель поиска */}
                     {showSearch && (
                         <div className="relative flex-1 max-w-sm">
                             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                             <Input
-                                placeholder="Search..."
+                                placeholder="Поиск..."
                                 value={searchQuery}
                                 onChange={(e) => handleSearchChange(e.target.value)}
                                 className="pl-10"
@@ -117,7 +117,7 @@ export default function DataTable<T extends Record<string, any>>({
                         </div>
                     )}
 
-                    {/* Header Actions - only shown if provided */}
+                    {/* Действия заголовка */}
                     {headerActions && (
                         <div className="flex items-center gap-2">
                             {headerActions}
@@ -126,7 +126,7 @@ export default function DataTable<T extends Record<string, any>>({
                 </div>
             )}
 
-            {/* Table */}
+            {/* Таблица */}
             <div className="rounded-lg border bg-card shadow-sm overflow-hidden">
                 <div className="overflow-x-auto">
                     <table className="w-full">
@@ -150,7 +150,7 @@ export default function DataTable<T extends Record<string, any>>({
                                         )}
                                     </th>
                                 ))}
-                                {actions && <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">Actions</th>}
+                                {actions && <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">Действия</th>}
                             </tr>
                         </thead>
                         <tbody className="divide-y">
@@ -184,11 +184,11 @@ export default function DataTable<T extends Record<string, any>>({
                 </div>
             </div>
 
-            {/* Pagination */}
+            {/* Пагинация */}
             {totalPages > 1 && (
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                     <p className="text-sm text-muted-foreground">
-                        Showing {startIndex + 1} to {Math.min(endIndex, sortedData.length)} of {sortedData.length} entries
+                        Показано с {startIndex + 1} по {Math.min(endIndex, sortedData.length)} из {sortedData.length} записей
                     </p>
                     <div className="flex items-center gap-2">
                         <Button
@@ -208,7 +208,7 @@ export default function DataTable<T extends Record<string, any>>({
                             <ChevronLeft className="h-4 w-4" />
                         </Button>
                         <span className="text-sm">
-                            Page {currentPage} of {totalPages}
+                            Страница {currentPage} из {totalPages}
                         </span>
                         <Button
                             variant="outline"

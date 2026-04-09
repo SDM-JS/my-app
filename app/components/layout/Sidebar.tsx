@@ -27,34 +27,34 @@ interface SidebarProps {
     role: 'admin' | 'teacher';
 }
 const adminMenuItems = [
-    { icon: LayoutDashboard, label: 'Dashboard', href: '/admin' },
-    { icon: Users, label: 'Students', href: '/admin/students' },
-    { icon: GraduationCap, label: 'Teachers', href: '/admin/teachers' },
-    { icon: Layers, label: 'Subjects', href: '/admin/subjects' }, // <-- Added Subjects here
-    { icon: BookOpen, label: 'Courses', href: '/admin/courses' },
-    { icon: Calendar, label: 'Lessons', href: '/admin/lessons' },
-    { icon: CreditCard, label: 'Payments', href: '/admin/payments' },
-    { icon: CheckSquare, label: 'Attendances', href: '/admin/attendances' },
-    { icon: UsersRound, label: 'Groups', href: '/admin/groups' },
-    { icon: BarChartBig, label: "Statistics", href: "/admin/statistics" },
-    { icon: Settings, label: 'Settings', href: '/admin/settings' }
+    { icon: LayoutDashboard, label: 'Панель управления', href: '/admin' },
+    { icon: Users, label: 'Ученики', href: '/admin/students' },
+    { icon: GraduationCap, label: 'Преподаватели', href: '/admin/teachers' },
+    { icon: Layers, label: 'Предметы', href: '/admin/subjects' },
+    { icon: BookOpen, label: 'Курсы', href: '/admin/courses' },
+    { icon: Calendar, label: 'Занятия', href: '/admin/lessons' },
+    { icon: CreditCard, label: 'Платежи', href: '/admin/payments' },
+    { icon: CheckSquare, label: 'Посещаемость', href: '/admin/attendances' },
+    { icon: UsersRound, label: 'Группы', href: '/admin/groups' },
+    { icon: BarChartBig, label: "Статистика", href: "/admin/statistics" },
+    { icon: Settings, label: 'Настройки', href: '/admin/settings' }
 ];
 
 const teacherMenuItems = [
-    { icon: LayoutDashboard, label: 'Dashboard', href: '/teacher' },
-    { icon: Users, label: 'My Students', href: '/teacher/students' },
-    { icon: CheckSquare, label: 'My Attendances', href: '/teacher/attendances' },
-    { icon: Calendar, label: 'My Lessons', href: '/teacher/lessons' },
+    { icon: LayoutDashboard, label: 'Панель управления', href: '/teacher' },
+    { icon: Users, label: 'Мои ученики', href: '/teacher/students' },
+    { icon: CheckSquare, label: 'Моя посещаемость', href: '/teacher/attendances' },
+    { icon: Calendar, label: 'Мои занятия', href: '/teacher/lessons' },
 ];
 
-// Desktop Sidebar Component
+// Компонент боковой панели для десктопа
 function DesktopSidebar({ role, pathname }: { role: 'admin' | 'teacher'; pathname: string }) {
     const menuItems = role === 'admin' ? adminMenuItems : teacherMenuItems;
 
     return (
         <aside className="hidden lg:fixed lg:inset-y-0 lg:z-40 lg:flex lg:w-64 lg:flex-col">
             <div className="flex grow flex-col gap-y-5 overflow-y-auto border-r bg-card px-6 pb-4 shadow-sm">
-                {/* Logo */}
+                {/* Логотип */}
                 <div className="flex h-16 shrink-0 items-center">
                     <Link href={role === 'admin' ? '/admin' : '/teacher'} className="flex items-center gap-2">
                         <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary text-primary-foreground">
@@ -64,7 +64,7 @@ function DesktopSidebar({ role, pathname }: { role: 'admin' | 'teacher'; pathnam
                     </Link>
                 </div>
 
-                {/* Navigation */}
+                {/* Навигация */}
                 <nav className="flex flex-1 flex-col">
                     <ul role="list" className="flex flex-1 flex-col gap-y-1">
                         {menuItems.map((item) => {
@@ -91,7 +91,7 @@ function DesktopSidebar({ role, pathname }: { role: 'admin' | 'teacher'; pathnam
                     </ul>
                 </nav>
 
-                {/* Footer */}
+                {/* Футер */}
                 <div className="border-t pt-4">
                     <div className="text-xs text-muted-foreground">
                         © 2025 EduCRM
@@ -102,7 +102,7 @@ function DesktopSidebar({ role, pathname }: { role: 'admin' | 'teacher'; pathnam
     );
 }
 
-// Mobile Sidebar Component
+// Компонент мобильной боковой панели
 function MobileSidebar({ role, pathname, open, onOpenChange }: {
     role: 'admin' | 'teacher';
     pathname: string;
@@ -114,13 +114,13 @@ function MobileSidebar({ role, pathname, open, onOpenChange }: {
     return (
         <Sheet open={open} onOpenChange={onOpenChange}>
             <SheetContent side="left" className="w-64 p-0">
-                {/* Hidden title for accessibility */}
+                {/* Скрытый заголовок для доступности (accessibility) */}
                 <SheetTitle asChild>
-                    <VisuallyHidden>Navigation Menu</VisuallyHidden>
+                    <VisuallyHidden>Меню навигации</VisuallyHidden>
                 </SheetTitle>
 
                 <div className="flex grow flex-col gap-y-5 overflow-y-auto bg-card px-6 pb-4">
-                    {/* Logo and Close Button */}
+                    {/* Логотип и кнопка закрытия */}
                     <div className="flex h-16 shrink-0 items-center justify-between">
                         <Link
                             href={role === 'admin' ? '/admin' : '/teacher'}
@@ -134,7 +134,7 @@ function MobileSidebar({ role, pathname, open, onOpenChange }: {
                         </Link>
                     </div>
 
-                    {/* Navigation */}
+                    {/* Навигация */}
                     <nav className="flex flex-1 flex-col">
                         <ul role="list" className="flex flex-1 flex-col gap-y-1">
                             {menuItems.map((item) => {
@@ -162,7 +162,7 @@ function MobileSidebar({ role, pathname, open, onOpenChange }: {
                         </ul>
                     </nav>
 
-                    {/* Footer */}
+                    {/* Футер */}
                     <div className="border-t pt-4">
                         <div className="text-xs text-muted-foreground">
                             © 2025 EduCRM
@@ -174,7 +174,7 @@ function MobileSidebar({ role, pathname, open, onOpenChange }: {
     );
 }
 
-// Mobile Menu Button (standalone component)
+// Кнопка мобильного меню
 function MobileMenuButton({ onMenuClick }: { onMenuClick: () => void }) {
     return (
         <Button
@@ -185,7 +185,7 @@ function MobileMenuButton({ onMenuClick }: { onMenuClick: () => void }) {
             onClick={onMenuClick}
         >
             <Menu className="h-6 w-6" />
-            <VisuallyHidden>Open menu</VisuallyHidden>
+            <VisuallyHidden>Открыть меню</VisuallyHidden>
         </Button>
     );
 }
@@ -196,7 +196,7 @@ export default function Sidebar({ role }: SidebarProps) {
 
     return (
         <>
-            {/* Mobile Sidebar */}
+            {/* Мобильная панель */}
             <MobileSidebar
                 role={role}
                 pathname={pathname}
@@ -204,10 +204,10 @@ export default function Sidebar({ role }: SidebarProps) {
                 onOpenChange={setSidebarOpen}
             />
 
-            {/* Desktop Sidebar */}
+            {/* Десктопная панель */}
             <DesktopSidebar role={role} pathname={pathname} />
 
-            {/* Mobile Menu Button */}
+            {/* Кнопка открытия мобильного меню */}
             <MobileMenuButton onMenuClick={() => setSidebarOpen(true)} />
         </>
     );
