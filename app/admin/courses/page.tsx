@@ -26,7 +26,7 @@ import * as z from 'zod';
 import { toast } from 'sonner';
 import { useQuery } from '@tanstack/react-query';
 import { axiosClient } from '@/lib/axiosClient';
-import { Course, Groups, Lessons, Student, Subject, Teacher } from '@prisma/client';
+import { Course, Groups, Student, Subject, Teacher } from '@prisma/client';
 
 // Схема Zod для валидации формы курса
 const courseSchema = z.object({
@@ -43,7 +43,7 @@ type CourseWithRelations = Course & {
     subject: Subject | null;
     teacher: Teacher[];
     students: Student[];
-    lessons: Lessons[];
+
     groups: Groups[];
 };
 

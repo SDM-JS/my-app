@@ -36,8 +36,7 @@ async function getDashboardStats() {
                 }
             },
             include: {
-                student: true,
-                lessons: true
+                student: true
             }
         }),
         prisma.student.count({
